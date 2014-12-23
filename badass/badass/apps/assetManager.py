@@ -632,10 +632,19 @@ class UiCreateTask (QtGui.QWidget) :
 
 class UiAssetManager(QtGui.QMainWindow):
 
+    
     def __init__(self, parent = None, launcher = "terminal"):
         super(UiAssetManager, self).__init__(parent)
-        self.launcher=launcher
-
+        
+        self.db=utils.getDb()
+        if self.db:
+            self.launcher=launcher
+            self.createUi()
+        else:
+            print("UiAssetManager(): Cannot get DB")
+            self.close()
+        
+    def createUi(self):        
         self.setObjectName("MainWindow")
         self.resize(800, 600)
         self.centralwidget=QtGui.QWidget(self)
@@ -884,7 +893,6 @@ class UiAssetManager(QtGui.QMainWindow):
         self.setStatusBar(self.statusbar)
 
         # TODO:Clean it
-        self.db=utils.getDb()
         self.user=utils.getCurrentUser()
         self.users=core.getProjectUsers (self.db)
         self.userStatus=self.users[self.user]

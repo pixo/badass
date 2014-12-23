@@ -36,16 +36,16 @@ def isProject (db = None):
     """
 
     # Check if Db contains a Document with the same name
-    if not (db.name in db) :
+    if not db or not (db.name in db) :
         return False
 
-    dbproj=db [ db.name ]
+    dbproj=db[ db.name ]
 
     # Check if the Document have a type attr
     if not ("type" in dbproj) :
         return False
 
-    doctype=dbproj [ "type" ]
+    doctype=dbproj[ "type" ]
 
     # Check if the Document is a project type Document
     if doctype=="project":
@@ -94,6 +94,10 @@ def getProjectUsers (db = None):
     
     """
 
+    # Check if db exists
+    if not db :
+        return False
+    
     # Check if the db contains project
     if not (isProject (db)):
         raise ProjectError ("getProjectUsers(): Db %s isn't a project"%db.name)

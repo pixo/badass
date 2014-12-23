@@ -16,6 +16,6 @@ requires :
 # - doxygen
 commands:
 - export BADASSVER=0.0.1
-- export BADASS=!ROOT!/src
+- export BADASS=!ROOT!/badass
 - export PYTHONPATH=$PYTHONPATH:$BADASS
 - export PATH=$PATH:!ROOT!/bin

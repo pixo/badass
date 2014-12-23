@@ -36,6 +36,7 @@ def getServer ( serveradress = "" ) :
 
 
 def serverExists ( serveradress = "" ) :
+
     if serveradress.find ( "http://" ) < 0:
         serveradress = "http://%s" % serveradress
 
@@ -47,6 +48,7 @@ def serverExists ( serveradress = "" ) :
 
     except:
         return False
+
 
 def getDb ( dbname = "" , serveradress = "" ) :
 
