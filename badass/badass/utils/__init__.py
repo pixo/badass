@@ -1,4 +1,6 @@
-from data import *
+# from attributes import *
+from attributes import *
 from rule import *
-from db import *
 from system import *
+from database import *
+
