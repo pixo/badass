@@ -1,4 +1,4 @@
-from infos import *
+from data import *
 from rule import *
-from dataBase import *
+from db import *
 from system import *

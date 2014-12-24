@@ -139,19 +139,6 @@ def getProjectEnv ( project = "" ) :
         print "getProjectEnv():can't get network repository"
         return False
 
-def getIconPath ( name = "default" ):
-    dir = os.path.join( os.getenv ( "HK_REPO" ), os.getenv ( "HK_PROJECT" ), "config", "icons" )
-    path = os.path.join( dir, name + ".png" )
-
-    if not os.path.exists( path ):
-        dir = os.path.join( os.getenv ( "HK_BADASS" ), "icons" )
-        path = os.path.join( dir, name + ".png" )
-
-        if not os.path.exists( path ):
-            path = os.path.join( dir, "default" + ".png" )
-
-    return path
-
 def getProjectName () :
     return os.getenv ( "HK_PROJECT" )
 

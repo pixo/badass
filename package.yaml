@@ -1,21 +1,14 @@
 name : badass
-
 uuid : 9ff6a484-e482-40e1-ac55-e259a5f58597
-
-description : "Badass is an asset manager."
+description : "Badass is an asset manager SDK."
 authors : [Rachid Chikh]
 config_version : 0
 version : 0.0.1
-#variants :
-#- [ platform-linux, gcc-4.1.2, boost-1.47.0, python-2.6 ]
-#- [ platform-linux, gcc-4.1.2, boost-1.47.0, python-2.7 ]
+
 requires :
-- pyside
 - pycouchdb
-# build_requires:
-# - doxygen
+
 commands:
 - export BADASSVER=0.0.1
 - export BADASS=!ROOT!/badass
 - export PYTHONPATH=$PYTHONPATH:$BADASS
-- export PATH=$PATH:!ROOT!/bin

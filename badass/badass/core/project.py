@@ -3,7 +3,7 @@ Created on Jan 11, 2013
 
 @author: pixo
 '''
-import os, time
+import os, time, uuid
 import badass.utils as utils
 
 
@@ -151,7 +151,147 @@ def lsProjectServer (serveradress):
     return projects
 
 
-def createProjectEnv (name = "", badassversion = None):
+def createProject (name = "", description = "Default", db_server = "",
+                      host_root = "", overdoc = dict ()):
+    """
+    This function create a project.
+
+    :param name: The project name
+    :type name: str
+    :param description: The project description
+    :type description: str
+    :param db_server: The data base adress
+    :type db_server: str
+    :param host_root: The host data server root adress  
+    :type host_root: str
+    :param overdoc: A dictionnary that contains extra document attributes.
+    :type overdoc: dict
+    :returns:  couchdb.client.Database -- return the db.
+    :raises: AttributeError, KeyError
+
+    **Example:**
+
+    >>> createProject ( name = "prod", description = "this is the project prod",
+                        db_server = "admin:pass@127.0.0.1:5984", host_root = "admin@127.0.0.1:/homeworks" )
+    
+    """
+    # Check if DB server exists
+    adress="http://%s/"%db_server
+    exists=utils.serverExists (adress)
+
+    if not exists :
+        print "createProject(): Wrong DB server adress,user or/and password"
+        return False
+
+    # Check args
+    if name=="" :
+        print "CreateProject(): Please provide a project name"
+        return False
+
+    if db_server=="" or db_server==None :
+        print "CreateProject(): No server adress provided"
+        return False
+
+    # Check if DB and project already exist
+    db=utils.getDb(name, adress)
+
+    # If DB and project exists return
+    if db!=False :
+        return False
+
+    # Create DB
+    db=utils.createDb(name, adress)
+
+#     # Create project env and cred file
+#     createProjectEnv(name, badassversion)
+#     createProjectCred(name, db_server, host_root)
+
+    # Adding db project documents
+    assets=utils.getAssetTypes()
+    tasks=utils.getAssetTasks()
+
+    # Users
+    users=dict()
+    users[utils.getCurrentUser()]="admin"
+
+    doc={
+            "_id" : "%s"%name,
+            "type" : "project",
+            "name" : name,
+            "description" : description,
+            "asset_types" : assets,
+            "asset_tasks" : tasks,
+            "creator" : os.getenv ("USER"),
+            "created" : time.time(),
+            "root" : "/homeworks",
+            "users" : users,
+            "status": {"art":"ns", "tech":"ns"},
+            "host" : host_root
+            }
+
+    doc.update(overdoc)
+
+    _id, _rev=db.save(doc)
+    print "createProject(): Project '%s' created"%(name)
+
+    return db
+
+
+def createProjectEnv(name = False):
+    """
+    This function create a project environment file.
+    It contains project environment variables related to the project.
+    This file is sourced each times a user log to a project via the hk-project command.
+
+    :param name: The project name.
+    :type name: str
+    :returns:  str/bool -- If environment file created return the file path else False
+
+    **Example:**
+
+    >>> createProjectEnv ( name = "prod" )
+    >>> '/homeworks/projects/prod/config/prod.env'
+    
+    """
+    
+    if not name:
+        return False
+    
+    def getversion(ver):
+        if ver:
+            ver=ver.split(".")
+            ver="%s.%s" % (ver[0],ver[1])
+        return ver
+       
+    projyaml=""
+    projyaml+="name : %s\n" % name
+    projyaml+="uuid : %s\n" % uuid.uuid1()
+    projyaml+="description : 'This is the project %s'\n" % name
+    projyaml+="authors : [%s]\n" % utils.getCurrentUser()
+    projyaml+="config_version : 0\n"
+    projyaml+="version : 0.0.1\n"
+    
+    #Package requires
+    projyaml+="requires :\n"
+    
+    badassver=getversion(os.getenv("HK_BADASSVER", False))
+    if badassver: projyaml+="- badass-%s\n" % badassver
+    
+    mayaver=getversion(os.getenv("HK_MAYAVER", False))
+    if mayaver: projyaml+="- maya-%s\n" % mayaver
+    
+    #Commands
+    projyaml+="commands:\n"
+    projyaml+="- export HK_PROJECT=%s\n" % name
+    projyaml+="- export HK_ROOT=/homeworks\n"
+    projyaml+="- export HK_REPO=$HK_ROOT/projects"
+    projyaml+="- export HK_HOME=$HK_ROOT/users/$USER"
+    projyaml+="- export HK_USER_REPO=$HK_HOME/projects"
+    #export HK_PROJECT_ENV="$HK_REPO/$project/config/$project.env"
+                    
+    projyaml+="- export PS1='\[\033[1;37m\]HK-REZ\[\033[1;34m\]|$HK_PROJECT>\[\033[0;33m\]\w$ \[\033[00m\]'\n"
+    
+def _createProjectEnv (name = ""):
     """
     This function create a project environment file.
     It contains project environment variables related to the project.
@@ -173,9 +313,8 @@ def createProjectEnv (name = "", badassversion = None):
     # Check the project name is
     if (name!=None) and (name==""):
         return False
-
-    if not badassversion:
-        badassversion=utils.getBadassVersion()
+    
+    badassversion=utils.getBadassVersion()
 
     # TODO:Create this document with a ui
     env_data="source $HOME/.bashrc\n"
@@ -277,88 +416,3 @@ def createProjectCred (name, db_server, host_root):
 
     else :
         return False
-
-def createProject (name = "", description = "Default", db_server = "",
-                      host_root = "", overdoc = dict (), badassversion = None):
-    """
-    This function create a project.
-
-    :param name: The project name
-    :type name: str
-    :param description: The project description
-    :type description: str
-    :param db_server: The data base adress
-    :type db_server: str
-    :param host_root: The host data server root adress  
-    :type host_root: str
-    :param overdoc: A dictionnary that contains extra document attributes.
-    :type overdoc: dict
-    :returns:  couchdb.client.Database -- return the db.
-    :raises: AttributeError, KeyError
-
-    **Example:**
-
-    >>> createProject ( name = "prod", description = "this is the project prod",
-                        db_server = "admin:pass@127.0.0.1:5984", host_root = "admin@127.0.0.1:/homeworks" )
-    
-    """
-    # Check if DB server exists
-    adress="http://%s/"%db_server
-    exists=utils.serverExists (adress)
-
-    if not exists :
-        print "createProject(): Wrong DB server adress,user or/and password"
-        return False
-
-    # Check args
-    if name=="" :
-        print "CreateProject(): Please provide a project name"
-        return False
-
-    if db_server=="" or db_server==None :
-        print "CreateProject(): No server adress provided"
-        return False
-
-    # Check if DB and project already exist
-    db=utils.getDb(name, adress)
-
-    # If DB and project exists return
-    if db!=False :
-        return False
-
-    # Create DB
-    db=utils.createDb(name, adress)
-
-    # Create project env and cred file
-    createProjectEnv(name, badassversion)
-    createProjectCred(name, db_server, host_root)
-
-    # Adding db project documents
-    assets=utils.getAssetTypes()
-    tasks=utils.getAssetTasks()
-
-    # Users
-    users=dict()
-    users[utils.getCurrentUser()]="admin"
-
-    doc={
-            "_id" : "%s"%name,
-            "type" : "project",
-            "name" : name,
-            "description" : description,
-            "asset_types" : assets,
-            "asset_tasks" : tasks,
-            "creator" : os.getenv ("USER"),
-            "created" : time.time(),
-            "root" : "/homeworks",
-            "users" : users,
-            "status": {"art":"ns", "tech":"ns"},
-            "host" : host_root
-            }
-
-    doc.update(overdoc)
-
-    _id, _rev=db.save(doc)
-    print "createProject(): Project '%s' created"%(name)
-
-    return db
