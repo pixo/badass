@@ -898,7 +898,7 @@ def getPathFromId (doc_id = "", local = False, vtype = "review"):
     >>> '/homeworks/users/jdoe/projects/prod/chr/mickey/mod/a'    
     
     """
-    if utils.checkVersionType(vtype) :
+    if not ( vtype in utils.getVersionType() ):
         return False
 
     # Get the last part of the path
@@ -947,7 +947,7 @@ def getVersions (db = None, doc_id = "", vtype = "review"):
         '2': {'files': ['bls_chr_belanus_mod_main.mb'] ... and so ... }
     """
 
-    if utils.checkVersionType (vtype) :
+    if not ( vtype in utils.getVersionType() ):
         return False
 
     # If db is not provided get the current project DB
@@ -982,7 +982,7 @@ def getVersionPath (doc_id = "", version = "last", db = None, vtype = "review"):
     """
     # old getAssetPath
 
-    if utils.checkVersionType (vtype) :
+    if not ( vtype in utils.getVersionType() ):
         return False
 
     # Get asset versions
@@ -1024,7 +1024,7 @@ def getLocalVersionPath (doc_id = "", version = 1, vtype = "review"):
     # old getAssetLocalPath
 
     # Make sure vtype exists
-    if utils.checkVersionType (vtype) :
+    if not ( vtype in utils.getVersionType() ) :
         return False
 
     # Make sure to get the right type for concatenation
@@ -1097,7 +1097,7 @@ def createWorkspace (doc_id = "", vtype = "review"):
     
     """
     # Make sure vtype exists
-    if utils.checkVersionType (vtype) :
+    if not ( vtype in utils.getVersionType() ) :
         return False
 
     # Get the local asset path to create from asset id
@@ -1199,7 +1199,7 @@ def pull (db = None, doc_id = "", version = "last", extension = False,
 
     """
     # Make sure vtype exists
-    if utils.checkVersionType (vtype) :
+    if not ( vtype in utils.getVersionType() ) :
         return False
 
     def echoMsg (msg = "", msgbar = None):
@@ -1296,7 +1296,7 @@ def push (db = "", doc_id = "", path = list(), description = "",
     """
 
     # Make sure vtype exists
-    if utils.checkVersionType (vtype) :
+    if not ( vtype in utils.getVersionType() ) :
         return False
 
     # TODO: Check push for auto screenshot publish
@@ -1465,7 +1465,7 @@ def pushDir (db = "", doc_id = "", path = list(), description = "", vtype = "rev
 
     """
     # Make sure vtype exists
-    if utils.checkVersionType (vtype) :
+    if not ( vtype in utils.getVersionType() ) :
         return False
 
     # check if the source file exists in the repository
@@ -1561,7 +1561,7 @@ def pushFile (db = None, doc_id = False, path = list (), description = "", renam
 
     """
     # Make sure vtype exists
-    if utils.checkVersionType (vtype) :
+    if not ( vtype in utils.getVersionType() ) :
         return False
 
     # Check if DB is provided else get the project DB
@@ -1926,7 +1926,7 @@ def texturePush (db = None, doc_id = "", path = "", description = "",
 
     """
     # Make sure vtype exists
-    if utils.checkVersionType (vtype) :
+    if not ( vtype in utils.getVersionType() ) :
         return False
 
     # List the directory

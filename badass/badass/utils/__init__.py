@@ -17,6 +17,9 @@ def checkVersionType(vtype=""):
         print ( "utils.checkVersionType: wrong version type" )
         return True
 
+def getVersionType(vtype=""):
+    return ["review", "release"]
+
 def getTextureTypes():
     #TODO: Documentation
     return {  # TODO: Create a dict instead of a list for the type parameters
