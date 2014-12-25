@@ -8,16 +8,8 @@ import itertools, re, os, hashlib, time
 #===============================================================================
 # RULE
 #===============================================================================
-def checkVersionType(vtype=""):
-    #TODO: Documentation
-    types = ["review", "release"]
-    if vtype in types :
-        return False
-    else :
-        print ( "utils.checkVersionType: wrong version type" )
-        return True
 
-def getVersionType(vtype=""):
+def getVersionType():
     return ["review", "release"]
 
 def getTextureTypes():
@@ -210,6 +202,7 @@ def hashFile ( path = "" ) :
 
 
 def compareFile ( file_a = "", file_b = "" ):
+    # TODO: use default python function filecmp.cmp
     """
     This function compare two files contains based on sha1.
     It is very useful if you need to know if two files are the same.
@@ -267,17 +260,17 @@ def createFile ( path = "", content = "", overwrite = False ) :
 
 def getLocalRoot () :
     #TODO: Documentation
-    return os.getenv ( "HK_ROOT" )
+    return os.getenv ( "BD_ROOT" )
 
 
 def getHostRoot () :
     #TODO: Documentation
-    return os.getenv ( "HK_HOST_ROOT" )
+    return os.getenv ( "BD_HOST_ROOT" )
 
 
 def getRepo () :
     #TODO: Documentation
-    repo = os.getenv ( "HK_REPO" )
+    repo = os.getenv ( "BD_REPO" )
     if repo == None :
         root = getLocalRoot ()
         repo = os.path.join ( root, "projects" )
@@ -301,7 +294,7 @@ def getProjectEnv ( project = "" ) :
 
 def getProjectName () :
     #TODO: Documentation
-    return os.getenv ( "HK_PROJECT" )
+    return os.getenv ( "BD_PROJECT" )
 
 
 def extractNumber ( name ):

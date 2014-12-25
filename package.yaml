@@ -9,6 +9,6 @@ requires :
 - pycouchdb
 
 commands:
-- export BADASSVER=0.0.1
-- export BADASS=!ROOT!/badass
-- export PYTHONPATH=$PYTHONPATH:$BADASS
+- export BD_ASSVER=!VERSION!
+- export BD_ASS=!ROOT!
+- export PYTHONPATH=$BD_ASS:$PYTHONPATH

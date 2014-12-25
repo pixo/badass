@@ -1,5 +1,5 @@
 #!/bin/bash
 
-export BADASS=`pwd`/badass
-export BADASSVER=0.1.0
+export BD_ASS=`pwd`/badass
+export BD_ASSVER=0.1.0
 rez-env pyside pycouchdb liclipse sublime

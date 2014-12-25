@@ -5,8 +5,8 @@ import glob
 import shutil
 import re
 import commands
-import badass.utils as utils
 import couchdb
+import badass.utils as utils
 
 
 def getBadassVersion():
@@ -20,7 +20,7 @@ def getBadassVersion():
     >>> '0.1.0'
 
     """
-    return os.getenv("BADASSVER", "?")
+    return os.getenv("BD_ASSVER", False)
 
 
 def getCurrentUser():
@@ -48,7 +48,7 @@ def getDesign():
 def getServer(serveradress=""):
 
     if serveradress == "":
-        serveradress = os.getenv("HK_DB_SERVER")
+        serveradress = os.getenv("BD_DB_SERVER")
 
     if serveradress.find("http://") == -1:
         serveradress = "http://%s" % serveradress
@@ -74,16 +74,16 @@ def serverExists(serveradress=""):
 
 
 def getDb(dbname="", serveradress=""):
-
+    # TODO: Documentation for getDb()
     if dbname == "" or dbname is None:
-        dbname = os.getenv("HK_DB")
+        dbname = os.getenv("BD_DB")
 
         if dbname == "" or dbname is None:
             print "getDb(): wrong dbname '%s'" % str(serveradress)
             return False
 
     if serveradress == "":
-        serveradress = os.getenv("HK_DB_SERVER")
+        serveradress = os.getenv("BD_DB_SERVER")
 
     server = getServer(serveradress)
 
@@ -564,7 +564,7 @@ def lsProjectServer(serveradress):
         if db_name not in ("_replicator", "_users"):
             db = server[db_name]
 
-            # Check if the current db is a HK project
+            # Check if the current db is a BD project
             if isProject(db):
 
                 # Get project authorized users
@@ -669,7 +669,7 @@ def createProjectEnv(name=False):
     """
     This function create a project environment file.
     It contains project environment variables related to the project.
-    This file is sourced each times a user log a project via the hk-project.
+    This file is sourced each times a user log a project via the bd-project.
 
     :param name: The project name.
     :type name: str
@@ -684,7 +684,7 @@ def createProjectEnv(name=False):
     if not name:
         return False
 
-    def getversion(ver):
+    def getVersion(ver):
         if ver:
             ver = ver.split(".")
             ver = "%s.%s" % (ver[0], ver[1])
@@ -701,32 +701,32 @@ def createProjectEnv(name=False):
     # Package requires
     projyaml += "requires :\n"
 
-    badassver = getversion(os.getenv("HK_BADASSVER", False))
+    badassver = getVersion(getBadassVersion())
     if badassver:
         projyaml += "- badass-%s\n" % badassver
 
-    mayaver = getversion(os.getenv("HK_MAYAVER", False))
+    mayaver = getVersion(os.getenv("BD_MAYAVER", False))
     if mayaver:
         projyaml += "- maya-%s\n" % mayaver
 
     # Commands
     projyaml += "commands:\n"
-    projyaml += "- export HK_PROJVER=!VERSION!\n"
-    projyaml += "- export HK_PROJECT=%s\n" % name
-    projyaml += "- export HK_ROOT=/homeworks\n"
-    projyaml += "- export HK_REPO=$HK_ROOT/projects\n"
-    projyaml += "- export HK_HOME=$HK_ROOT/users/$USER\n"
-    projyaml += "- export HK_USER_REPO=$HK_HOME/projects\n"
-    # export HK_PROJECT_ENV="$HK_REPO/$project/config/$project.env"
-    # projyaml += "- export PS1='\[\033[1;37m\]HK-REZ\[\033[1;34m\]
-    # |$HK_PROJECT>\[\033[0;33m\]\w$ \[\033[00m\]'\n"
+    projyaml += "- export BD_PROJVER=!VERSION!\n"
+    projyaml += "- export BD_PROJECT=%s\n" % name
+    projyaml += "- export BD_ROOT=/homeworks\n"
+    projyaml += "- export BD_REPO=$BD_ROOT/projects\n"
+    projyaml += "- export BD_HOME=$BD_ROOT/users/$USER\n"
+    projyaml += "- export BD_USER_REPO=$BD_HOME/projects\n"
+    # export BD_PROJECT_ENV="$BD_REPO/$project/config/$project.env"
+    # projyaml += "- export PS1='\[\033[1;37m\]BD-REZ\[\033[1;34m\]
+    # |$BD_PROJECT>\[\033[0;33m\]\w$ \[\033[00m\]'\n"
 
 '''
 def oldCreateProjectEnv(name=False):
     """
     This function create a project environment file.
     It contains project environment variables related to the project.
-    This file is sourced each times a user log a project via the hk-project.
+    This file is sourced each times a user log a project via the bd-project.
 
     :param name: The project name.
     :type name: str
@@ -748,38 +748,38 @@ def oldCreateProjectEnv(name=False):
 
     # TODO:Create this document with a ui
     env_data = "source $HOME/.bashrc\n"
-    env_data += "source $HK_ROOT/users/$USER/.hk/$HK_PROJECT\n\n"
+    env_data += "source $BD_ROOT/users/$USER/.bd/$BD_PROJECT\n\n"
     env_data += "#Set environment variables\n"
-    env_data += "export HK_DB=$HK_PROJECT\n"
-    env_data += "export HK_COAT_VER=4-0-03\n"
-    env_data += "export HK_COAT_VER_T=4-0-03\n"
-    env_data += "export HK_GUERILLA_VER=0.17.0b12\n"
-    env_data += "export HK_GUERILLA_VER_T=0.17.0b12\n"
-    env_data += "export HK_HIERO_VER=1.6v1\n"
-    env_data += "export HK_HIERO_PLAYER_VER=1.6v1\n"
-    env_data += "export HK_HOUDINI_VER=12.5\n"
-    env_data += "export HK_MARI_VER=2.0v1\n"
-    env_data += "export HK_MARI_VER_T=2.1v1a1\n"
-    env_data += "export HK_MAYA_ROOT=/usr/autodesk\n"
-    env_data += "export HK_MAYA_VER=2013\n"
-    env_data += "export HK_MODO_VER=701\n"
-    env_data += "export HK_MUDBOX_VER=2013\n"
-    env_data += "export HK_NUKE_VER=7.0v2\n"
-    env_data += "export HK_BADASS_VER=%s\n\n" % badassversion
-    env_data += "if $HK_DEV_MODE\n"
+    env_data += "export BD_DB=$BD_PROJECT\n"
+    env_data += "export BD_COAT_VER=4-0-03\n"
+    env_data += "export BD_COAT_VER_T=4-0-03\n"
+    env_data += "export BD_GUERILLA_VER=0.17.0b12\n"
+    env_data += "export BD_GUERILLA_VER_T=0.17.0b12\n"
+    env_data += "export BD_HIERO_VER=1.6v1\n"
+    env_data += "export BD_HIERO_PLAYER_VER=1.6v1\n"
+    env_data += "export BD_HOUDINI_VER=12.5\n"
+    env_data += "export BD_MARI_VER=2.0v1\n"
+    env_data += "export BD_MARI_VER_T=2.1v1a1\n"
+    env_data += "export BD_MAYA_ROOT=/usr/autodesk\n"
+    env_data += "export BD_MAYA_VER=2013\n"
+    env_data += "export BD_MODO_VER=701\n"
+    env_data += "export BD_MUDBOX_VER=2013\n"
+    env_data += "export BD_NUKE_VER=7.0v2\n"
+    env_data += "export BD_ASSVER=%s\n\n" % badassversion
+    env_data += "if $BD_DEV_MODE\n"
     env_data += "    then\n"
-    env_data += "        hkmode=\"|dev\"\n"
+    env_data += "        bdmode=\"|dev\"\n"
     env_data += "fi\n\n"
-    env_data += "alias work='cd $HK_HOME'\n\n"
-    env_data += "logpath=\"$HK_USER_REPO\"\n"
-    env_data += "export HK_BADASS=\"$HK_CODE_PATH/python/asset-manager/$HK_BADASS_VER\"\n"
-    env_data += "export HK_COUCHDB=\"$HK_CODE_PATH/python/couchdb-python\"\n"
-    env_data += "export HK_PYSIDE=\"$HK_CODE_PATH/python/pyside\"\n"
-    env_data += "argparse=\"$HK_CODE_PATH/python/argparse\"\n"
-    env_data += "json=\"$HK_CODE_PATH/python/json\"\n"
-    env_data += "export PYTHONPATH=\"$HK_BADASS:$json:$argparse:$PYTHONPATH\"\n\n"
+    env_data += "alias work='cd $BD_HOME'\n\n"
+    env_data += "logpath=\"$BD_USER_REPO\"\n"
+    env_data += "export BD_ASS=\"$BD_CODE_PATH/python/asset-manager/$BD_ASSVER\"\n"
+    env_data += "export BD_COUCHDB=\"$BD_CODE_PATH/python/couchdb-python\"\n"
+    env_data += "export BD_PYSIDE=\"$BD_CODE_PATH/python/pyside\"\n"
+    env_data += "argparse=\"$BD_CODE_PATH/python/argparse\"\n"
+    env_data += "json=\"$BD_CODE_PATH/python/json\"\n"
+    env_data += "export PYTHONPATH=\"$BD_ASS:$json:$argparse:$PYTHONPATH\"\n\n"
     env_data += "#Set PS1\n"
-    env_data += r"export PS1='\[\033[1;34m\]|\u@\h\[\033[1;37m\]|\t\[\033[1;31m\]|$HK_PROJECT$hkmode>\[\033[0;33m\]\w$ \[\033[00m\]'" + "\n\n"
+    env_data += r"export PS1='\[\033[1;34m\]|\u@\h\[\033[1;37m\]|\t\[\033[1;31m\]|$BD_PROJECT$bdmode>\[\033[0;33m\]\w$ \[\033[00m\]'" + "\n\n"
     env_data += "#Set the current directory\n"
     env_data += "if ! ([ -d $logpath ])\n"
     env_data += "      then\n"
@@ -821,16 +821,16 @@ def createProjectCred(name, db_server, host_root):
 
     >>> createProjectCred(name='prod',host_root='admin@192.168.0.9:/homeworks',
                           db_server='admin:pass@192.168.0.100:5984')
-    >>> '/homeworks/users/jdoe/.hk/prod'
+    >>> '/homeworks/users/jdoe/.bd/prod'
     """
 
     # Create credential file contains
-    cred = "export HK_DB_SERVER=%s\n" % db_server
-    cred += "export HK_HOST_ROOT=%s\n" % host_root
+    cred = "export BD_DB_SERVER=%s\n" % db_server
+    cred += "export BD_HOST_ROOT=%s\n" % host_root
 
     # Create credential file
-    file_cred = os.path.join(os.getenv("HK_ROOT"), "users", os.getenv("USER"))
-    file_cred = os.path.join(file_cred, ".hk", name)
+    file_cred = os.path.join(os.getenv("BD_ROOT"), "users", os.getenv("USER"))
+    file_cred = os.path.join(file_cred, ".bd", name)
 
     # Create the file with the collected credential data
     iscreated = utils.createFile(file_cred, cred, True)
@@ -912,7 +912,7 @@ def getIdFromPath(path=""):
     path = os.path.expandvars(path)
 
     # Get user repository
-    user_repo = os.getenv("HK_USER_REPO") + os.sep
+    user_repo = os.getenv("BD_USER_REPO") + os.sep
 
     # Get the doc_id
     path = path.replace(user_repo, "")
@@ -954,10 +954,10 @@ def getPathFromId(doc_id="", local=False, vtype="review"):
     # Get the first part of the path
     if local:
         # If true return the local project root
-        root = os.getenv("HK_USER_REPO")
+        root = os.getenv("BD_USER_REPO")
     else:
         # If false return the repository project root
-        root = os.getenv("HK_REPO")
+        root = os.getenv("BD_REPO")
 
     # Check the root path value
     if (not root) or root == "":
@@ -1342,9 +1342,9 @@ def push(db="", doc_id="", path=list(), description="",
     :returns: str -- Return the published directory
 
     **Example:**
-    >>> path="/homeworks/users/jdoe/projects/bls/chr/belanus/mod/main/file_to_push.mb"
+    >>> path="/homeworks/users/jdoe/projects/bls/chr/mimi/mod/a/file.mb"
     >>> db = badass.core.getDb()
-    >>> push( db=db, doc_id="bls_chr_belanus_mod_main", path=path,
+    >>> push( db=db, doc_id="bls_chr_mimi_mod_a", path=path,
     >>>        description="this is a modeling version of belanus" )
 
     """
@@ -1689,7 +1689,7 @@ def release(db=None, docId=False, version=False):
     _id, _rev = db.save(doc)
 
 # Texture #####################################################################
-# TODO move texture stuff in hktools
+# TODO move texture stuff in badtools
 
 
 class TextureError (Exception):
