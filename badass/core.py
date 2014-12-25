@@ -9,26 +9,9 @@ import couchdb
 import badass.utils as utils
 
 
-def getBadassVersion():
-    """
-    This function return the version of the AssetManager Badass.
-    :returns:  str -- The assetmanager used version
-
-    **Example:**
-
-    >>> getBadassVersion ()
-    >>> '0.1.0'
-
-    """
-    return os.getenv("BD_ASSVER", False)
-
-
-def getCurrentUser():
-    return os.getenv("USER")
-
-
 # DATABASE ####################################################################
 class DatabaseError(Exception):
+
     """
     Error raised by the project module.
 
@@ -48,7 +31,7 @@ def getDesign():
 def getServer(serveradress=""):
 
     if serveradress == "":
-        serveradress = os.getenv("BD_DB_SERVER")
+        serveradress = utils.getDbAdress()
 
     if serveradress.find("http://") == -1:
         serveradress = "http://%s" % serveradress
@@ -76,14 +59,14 @@ def serverExists(serveradress=""):
 def getDb(dbname="", serveradress=""):
     # TODO: Documentation for getDb()
     if dbname == "" or dbname is None:
-        dbname = os.getenv("BD_DB")
+        dbname = utils.getDbName()
 
         if dbname == "" or dbname is None:
             print "getDb(): wrong dbname '%s'" % str(serveradress)
             return False
 
     if serveradress == "":
-        serveradress = os.getenv("BD_DB_SERVER")
+        serveradress = utils.getDbAdress()
 
     server = getServer(serveradress)
 
@@ -255,7 +238,7 @@ def createAsset(
         "parents": {},
         "children": {},
         "description": description,
-        "creator": getCurrentUser(),
+        "creator": utils.getUser(),
         "created": time.time(),
         "status": {"art": "ns", "tec": "ns"},
         "production": {"bid": 0, "delivery": 20140611.5, "spent": 0,
@@ -337,7 +320,7 @@ def createTask(
         "children": {},
         "comments": {},
         "description": description,
-        "creator": getCurrentUser(),
+        "creator": utils.getUser(),
         "created": time.time(),
         "status": {"art": "ns", "tec": "ns"},
         "production": {"bid": 0, "delivery": 20140611.5, "spent": 0,
@@ -557,7 +540,7 @@ def lsProjectServer(serveradress):
     # Get db server from adress
     server = getServer(serveradress)
     projects = list()
-    user = getCurrentUser()
+    user = utils.getUser()
 
     # Iterate over all databases contained in the DB server
     for db_name in server:
@@ -630,7 +613,7 @@ def createProject(name="", description="Default", db_server="",
     # Create DB
     db = createDb(name, adress)
 
-#     # Create project env and cred file
+# Create project env and cred file
 #     createProjectEnv(name, badassversion)
 #     createProjectCred(name, db_server, host_root)
 
@@ -640,7 +623,8 @@ def createProject(name="", description="Default", db_server="",
 
     # Users
     users = dict()
-    users[getCurrentUser()] = "admin"
+    user = utils.getUser()
+    users[user] = "admin"
 
     doc = {
         "_id": "%s" % name,
@@ -649,7 +633,7 @@ def createProject(name="", description="Default", db_server="",
         "description": description,
         "asset_types": assets,
         "asset_tasks": tasks,
-        "creator": os.getenv("USER"),
+        "creator": user,
         "created": time.time(),
         "root": "/homeworks",
         "users": users,
@@ -694,14 +678,14 @@ def createProjectEnv(name=False):
     projyaml += "name : %s\n" % name
     projyaml += "uuid : %s\n" % uuid.uuid1()
     projyaml += "description : 'This is the project %s'\n" % name
-    projyaml += "authors : [%s]\n" % getCurrentUser()
+    projyaml += "authors : [%s]\n" % utils.getUser()
     projyaml += "config_version : 0\n"
     projyaml += "version : 0.0.1\n"
 
     # Package requires
     projyaml += "requires :\n"
 
-    badassver = getVersion(getBadassVersion())
+    badassver = getVersion(utils.getBadassVersion())
     if badassver:
         projyaml += "- badass-%s\n" % badassver
 
@@ -744,13 +728,13 @@ def oldCreateProjectEnv(name=False):
     if (name is not None) and (name == ""):
         return False
 
-    badassversion = getBadassVersion()
+    badassversion = utils.getBadassVersion()
 
     # TODO:Create this document with a ui
     env_data = "source $HOME/.bashrc\n"
     env_data += "source $BD_ROOT/users/$USER/.bd/$BD_PROJECT\n\n"
     env_data += "#Set environment variables\n"
-    env_data += "export BD_DB=$BD_PROJECT\n"
+    env_data += "export BD_DBNAME=$BD_PROJECT\n"
     env_data += "export BD_COAT_VER=4-0-03\n"
     env_data += "export BD_COAT_VER_T=4-0-03\n"
     env_data += "export BD_GUERILLA_VER=0.17.0b12\n"
@@ -825,11 +809,13 @@ def createProjectCred(name, db_server, host_root):
     """
 
     # Create credential file contains
-    cred = "export BD_DB_SERVER=%s\n" % db_server
-    cred += "export BD_HOST_ROOT=%s\n" % host_root
+    cred = "export BD_DBADRESS=%s\n" % db_server
+    cred += "export BD_HOSTROOT=%s\n" % host_root
 
     # Create credential file
-    file_cred = os.path.join(os.getenv("BD_ROOT"), "users", os.getenv("USER"))
+    root = utils.getLocalRoot()
+    user = utils.getUser()
+    file_cred = os.path.join(root, "users", user)
     file_cred = os.path.join(file_cred, ".bd", name)
 
     # Create the file with the collected credential data
@@ -912,7 +898,7 @@ def getIdFromPath(path=""):
     path = os.path.expandvars(path)
 
     # Get user repository
-    user_repo = os.getenv("BD_USER_REPO") + os.sep
+    user_repo = utils.getUserRepo() + os.sep
 
     # Get the doc_id
     path = path.replace(user_repo, "")
@@ -954,10 +940,10 @@ def getPathFromId(doc_id="", local=False, vtype="review"):
     # Get the first part of the path
     if local:
         # If true return the local project root
-        root = os.getenv("BD_USER_REPO")
+        root = utils.getUserRepo()
     else:
         # If false return the repository project root
-        root = os.getenv("BD_REPO")
+        root = utils.getRepo()
 
     # Check the root path value
     if (not root) or root == "":
@@ -1250,8 +1236,8 @@ def pull(db=None, doc_id="", version="last", extension=False,
 
     >>> db = core.getDb()
     >>> pull ( db = db, doc_id = "bls_chr_belanus_mod_main", version = 2 )
-    >>> ['/homeworks/users/jdoe/projects/bls/chr/belanus/mod/main/bls_chr_belanus_mod_main.v002.base/bls_chr_belanus_mod_main.jpg',
-    >>> '/homeworks/users/jdoe/projects/bls/chr/belanus/mod/main/bls_chr_belanus_mod_main.v002.base/bls_chr_belanus_mod_main.mb']
+    >>> [...chr/foo/mod/a/bls_chr_foo_mod_a.v002.base/bls_chr_foo_mod_a.jpg',
+    >>> .../chr/foo/mod/a/bls_chr_foo_mod_a.v002.base/bls_chr_foo_mod_a.mb']
     """
     # Make sure vtype exists
     if not (vtype in utils.getVersionType()):
@@ -1467,7 +1453,7 @@ def push(db="", doc_id="", path=list(), description="",
     os.system("chmod -R 555  %s" % repo)
 
     # Create the new version data for the "versions" document's attribute
-    fileinfo = {"creator": os.getenv("USER"),
+    fileinfo = {"creator": utils.getUser(),
                 "created": time.time(),
                 "description": description,
                 "path": path_attr,
@@ -1570,7 +1556,7 @@ def pushDir(db="", doc_id="", path=list(), description="", vtype="review"):
 
     # Create the new version data for the "versions" document's attribute
     fileinfo = {
-        "creator": os.getenv("USER"),
+        "creator": utils.getUser(),
         "created": time.time(),
         "description": description,
         "path": path_attr,
@@ -1673,7 +1659,7 @@ def release(db=None, docId=False, version=False):
         "%03d" %
         int(last))
     releaseVersion["created"] = time.time()
-    releaseVersion["creator"] = getCurrentUser()
+    releaseVersion["creator"] = utils.getUser()
     release[last] = releaseVersion
     doc["release"] = release
 
@@ -1689,7 +1675,7 @@ def release(db=None, docId=False, version=False):
     _id, _rev = db.save(doc)
 
 # Texture #####################################################################
-# TODO move texture stuff in badtools
+# TODO move texture stuff in badtools or in a badplugs (plugins)
 
 
 class TextureError (Exception):
@@ -1710,16 +1696,17 @@ def getTextureAttr(path=None):
     """
     This function return a list containing the type of the texture
     and a list of attributes that should match the textures attribute.
-    This is used to check if the texture have the right naming convention and the right attributes.
+    Used to check the texture naming convention and texture attributes.
 
     :param path: The list of files to push
     :type path: str
     :returns: str -- Return the directory of the pushed files
 
     **Example:**
-    >>> getTextureAttr ( path = "/homeworks/users/jdoe/projects/bls/chr/belanus/tex/main/bls_chr_belanus_tex_main_spec1.1001.tif" )
-    >>> ('spec1', ('R', '8-bit 16-bit', 'rgb(255,255,255)', True, 'triangle', '1'))
-
+    path = "/homeworks/users/jdoe/projects/bls"
+    path += "/chr/belanus/tex/main/bls_chr_belanus_tex_main_spec1.1001.tif"
+    >>> getTextureAttr(path=path)
+    >>> ('spec1',('R', '8-bit 16-bit','rgb(255,255,255)',True,'triangle','1'))
     """
 
     # Get authorized texture types list
@@ -1760,12 +1747,14 @@ def textureBuild(path="", mode="ww", texfilter=None):
     :returns: bool -- True if texture builded
 
     **Example:**
-    >>> textureBuild ( path = "/homeworks/users/jdoe/projects/bls/chr/belanus/tex/main/bls_chr_belanus_tex_main_spec1.1001.tif" )
+    path = "/homeworks/users/jdoe/projects/bls"
+    path += "/chr/belanus/tex/main/bls_chr_belanus_tex_main_spec1.1001.tif"
+    >>> textureBuild(path=path)
 
     **Note:**
-        This function use a system command that calls the 'render' binary from guerilla.
+        This function use the system 'render' binary from guerilla.
         You can add your custom builder here.
-        Make sure to have it in your PATH.
+        Make sure to have 'render' in your PATH.
     """
 
     # TODO: Add Gamma support
@@ -1791,7 +1780,8 @@ def textureBuild(path="", mode="ww", texfilter=None):
         ''
         fil = os.path.splitext(path)[0]
         tex = fil + ".tex"
-        cmd = """render --buildtex --in %s --mode %s --filter %s --out %s""" % (
+        # TODO: use subprocess
+        cmd = "render --buildtex --in %s --mode %s --filter %s --out %s" % (
             path, mode, texfilter, tex)
         os.system(cmd)
         print "buildtex: building %s" % tex
@@ -1812,7 +1802,9 @@ def textureOptimise(path=None):
     :type path: str
 
     **Example:**
-    >>> textureOptimise ( path = "/homeworks/users/jdoe/projects/bls/chr/belanus/tex/main/bls_chr_belanus_tex_main_spec1.1001.tif" )
+    path = "/homeworks/users/jdoe/projects/bls"
+    path += "/chr/belanus/tex/main/bls_chr_belanus_tex_main_spec1.1001.tif"
+    >>> textureOptimise(path=path)
 
     **Note:**
         This function use system commands that calls 'imagemagick'.
@@ -1864,21 +1856,25 @@ def textureOptimise(path=None):
 
         if texdepth.find(imgdepth) < 0:
             # Check the image depth
-            print "warning: wrong depth '%s', %s should be '%s'  " % (imgdepth, fname, texdepth)
+            print "warning: wrong depth '%s', %s should be '%s'" % (imgdepth,
+                                                                    fname,
+                                                                    texdepth)
 
         # TODO:check if tiff format warning is working
         if imgformat != "TIFF":
             # Check image format
-            print "warning: wrong format '%s', %s should be '%s'  " % (imgformat, fname, "TIFF")
+            print "warning: wrong format '%s', %s should be '%s'" % (imgformat,
+                                                                     fname,
+                                                                     "TIFF")
 
     else:
         print "Can't find the '%s' texture type" % fname
 
 
 def textureExport(path="", progressbar=False):
-    # TODO: Documentation for textureExport 
+    # TODO: Documentation for textureExport
     """
-    This function optimise and build 'tif' textures contained in the provided path.
+    Optimise and build 'tif' textures contained in the provided path.
 
     :param path: the path to the texture
     :type path: str
@@ -1887,12 +1883,13 @@ def textureExport(path="", progressbar=False):
     :returns: bool -- True if created
 
     **Example:**
-    >>> textureOptimise(path="/homeworks/users/jdoe/projects/bls/chr/mimi/tex/a/bls_chr_mimi_tex_a_spec1.1001.tif" )
+    >>> path = "/homeworks/users/jdoe/projects"
+    >>> path += "/bls/chr/mimi/tex/a/bls_chr_mimi_tex_a_spec1.1001.tif"
+    >>> textureOptimise(path=path)
 
     **Note:**
         This function use system commands that calls 'imagemagick'.
         Make sure to have it installed.
-
     """
 
     # Get all the tif files in the directory 'path'
@@ -1920,7 +1917,9 @@ def textureCheck(doc_id="", files=list()):
     :returns: list -- list of succeded textures path
 
     **Example:**
-    >>> textureOptimise(path="/homeworks/users/jdoe/projects/bls/chr/mimi/tex/a/bls_chr_mimi_tex_a_spec1.1001.tif")
+    >>> repo = "/homeworks/users/jdoe/projects"
+    >>> path = repo + "/bls/chr/mimi/tex/a/bls_chr_mimi_tex_a_spec1.1001.tif"
+    >>> textureOptimise(path=path)
 
     **Note:**
         This function use system commands that calls 'imagemagick'.
@@ -2055,10 +2054,10 @@ def texturePush(db=None, doc_id="", path="", description="",
         for tex in texCheck:
             print ("texturePush(): %s is wrong" % tex)
 
-        simptex = "%s_%s_%s.%s.%s" % (
-            doc_id, "<variation>", "<type>", "<udim>", "tif")
-        animtex = "%s_%s_%s.%s.%s.%s" % (
-            doc_id, "<variation>", "<type>", "<udim>", "<frame>", "tif")
+        simptex = "%s_%s_%s.%s.%s" % (doc_id, "<variation>", "<type>",
+                                      "<udim>", "tif")
+        animtex = "%s_%s_%s.%s.%s.%s" % (doc_id, "<variation>", "<type>",
+                                         "<udim>", "<frame>", "tif")
         print "texturePush(): expect %s or %s " % (simptex, animtex)
 
         return False
