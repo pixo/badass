@@ -1,2 +1,2 @@
 import os
-version=os.getenv("BADASSVER","?")
+__version__=os.getenv("BADASSVER","?")
