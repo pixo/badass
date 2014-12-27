@@ -18,7 +18,7 @@ def getAllAssetVersions():
     """
     This is a simple example to get all asset versions.
     """
-    db = utils.getDb()
+    db = core.getDb()
     versions = core.getVersions(db=db, doc_id="bls_chr_belanus_mod_main")
     print versions
     return versions
@@ -28,7 +28,7 @@ def getAnAssetVersion():
     """
     This is a simple example to get a particular asset version path.
     """
-    db = utils.getDb()
+    db = core.getDb()
     version = core.getVersionPath(
         db=db,
         doc_id="cpt_chr_jdoe_mod_a",
@@ -41,7 +41,7 @@ def pullAnAssetVersion():
     """
     This is a simple example to pull to workspace a particular asset version.
     """
-    db = utils.getDb()
+    db = core.getDb()
     version = 2
     result = core.pull(
         db=db,
@@ -111,7 +111,7 @@ def pushfile(path, description):
         print "hk-texture-publish: %s doesn't exists" % path
         return 1
 
-    db = utils.getDb()
+    db = core.getDb()
     doc_id = core.getIdFromPath(path)
 
     if not (doc_id in db):
@@ -125,10 +125,10 @@ def pushfile(path, description):
 
 
 def lsAllType():
-    db = utils.getDb()
+    db = core.getDb()
     typ = "asset"
     startkey = "loc"
-    asset_ls = utils.lsDb(db, typ, startkey)
+    asset_ls = core.lsDb(db, typ, startkey)
     return asset_ls
 
 
@@ -146,7 +146,7 @@ def createAssetOnDB(doc_id):
 
 
 def createTaskOnDB(doc_id):
-    db = utils.getDb()
+    db = core.getDb()
     description = "Test"
     stat = core.createTask(
         db=db,
@@ -178,7 +178,7 @@ def changeAttr(db=None, docId="", attr=None, value=None):
         return
 
     if not db:
-        db = utils.getDb()
+        db = core.getDb()
 
     doc = db[docId]
     doc[attr] = value
@@ -197,7 +197,7 @@ def copydir():
 #     path = "/homeworks/users/pixo/projects/test/cam/donaldcam/ani/a/review/caca.ma"
 #     description = "caca"
 #
-#     db = utils.getDb ()
+#     db = core.getDb ()
 #     doc_id = core.getIdFromPath ( path )
 #
 #     if not ( doc_id in db ) :
@@ -215,12 +215,13 @@ def copydir():
 #         else:
 #             print "wrong naming convention"
 
+
 if __name__ == '__main__':
     #     path = "/homeworks/users/pixo/projects/test/chr/mickey/mod/a/test_chr_mickey_mod_a.ma"
     #     description = "test asset"
     #     pushfile ( path, description )
     #     getAnAssetVersion ()
-    #     db = utils.getDb()
+    #     db = core.getDb()
     #     versions = db [ "cpt_chr_jdoe_mod_a" ]["versions"]
 
     #     createAssetOnDB( "ben_chr_donald" )
@@ -233,7 +234,7 @@ if __name__ == '__main__':
     #     pushfile("/homeworks/users/pixo/projects/test/chr/mimi/mod/a/review/test.ma", "this is a test")
     #     pushfile("/homeworks/users/pixo/projects/test/prp/umbrella/mod/a/review/test.ma", "this is a test")
     #     createMassiveAssets()
-    #     print utils.getDb()
+    #     print core.getDb()
     #     y = time.gmtime()clock
 
     #     y = time.time()
@@ -244,4 +245,4 @@ if __name__ == '__main__':
     #     pushfile("/homeworks/users/pixo/projects/tst/cam/camera/cam/a/review/caca.ma", "this is a test")
     #     changeAttr()
     #     copydir()
-    measureTime(createMassiveAssets)
+    #measureTime(createMassiveAssets)

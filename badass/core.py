@@ -94,7 +94,7 @@ def lsDb(db=None, view="", startkey="", endkey=""):
     return doc
 
 
-def createDbViews(db):
+def getDefaultViews():
     # TODO: add documentation to the function
     asset = utils.getAssetTypes()
     task = utils.getAssetTasks()
@@ -114,14 +114,14 @@ def createDbViews(db):
 
     # creating views per asset type
     for key in asset:
-        func = 'function(doc) {\n  if(doc.type == "%s") '
-        func += '{\n    emit(doc._id, doc);\n}\n}' % asset[key]
+        func = 'function(doc) {\n  if(doc.type == "%s") ' % asset[key]
+        func += '{\n    emit(doc._id, doc);\n}\n}'
         views[asset[key]] = {'map': func}
 
     # creating views per task type
     for key in task:
-        func = 'function(doc) {\n  if(doc.task == "%s") '
-        func += '{\n    emit(doc._id, doc);\n}\n}' % task[key]
+        func = 'function(doc) {\n  if(doc.task == "%s") ' % task[key]
+        func += '{\n    emit(doc._id, doc);\n}\n}'
         views[task[key]] = {'map': func}
 
     doc = {
@@ -130,8 +130,7 @@ def createDbViews(db):
         "views": views
     }
 
-    _id, _rev = db.save(doc)
-    return (_id, _rev)
+    return doc
 
 
 def createDb(name=None, serveradress=None):
@@ -163,9 +162,6 @@ def createDb(name=None, serveradress=None):
 
     # Create DataBate
     db = server.create(name)
-
-    # Create predefined Database Views
-    createDbViews(db)
 
     return db
 
@@ -562,8 +558,8 @@ def lsProjectServer(serveradress):
     return projects
 
 
-def createProject(name="", description="Default", db_server="",
-                  host_root="", overdoc=dict()):
+def createProject(name="", description="Default", db_server="", sync_root="",
+                  overdoc=dict()):
     """
     This function create a project.
 
@@ -573,8 +569,8 @@ def createProject(name="", description="Default", db_server="",
     :type description: str
     :param db_server: The data base adress
     :type db_server: str
-    :param host_root: The host data server root adress
-    :type host_root: str
+    :param sync_root: The host data server root adress
+    :type sync_root: str
     :param overdoc: A dictionnary that contains extra document attributes.
     :type overdoc: dict
     :returns:  couchdb.client.Database -- return the db.
@@ -584,7 +580,7 @@ def createProject(name="", description="Default", db_server="",
 
     >>> createProject(name="prod", description="this is the project prod",
                     db_server="admin:pass@127.0.0.1:5984",
-                    host_root="admin@127.0.0.1:/homeworks" )
+                    sync_root="admin@127.0.0.1:/homeworks" )
     """
     # Check if DB server exists
     adress = "http://%s/" % db_server
@@ -610,13 +606,6 @@ def createProject(name="", description="Default", db_server="",
     if db is not False:
         return False
 
-    # Create DB
-    db = createDb(name, adress)
-
-# Create project env and cred file
-#     createProjectEnv(name, badassversion)
-#     createProjectCred(name, db_server, host_root)
-
     # Adding db project documents
     assets = utils.getAssetTypes()
     tasks = utils.getAssetTasks()
@@ -638,18 +627,25 @@ def createProject(name="", description="Default", db_server="",
         "root": "/homeworks",
         "users": users,
         "status": {"art": "ns", "tech": "ns"},
-        "host": host_root
+        "host": sync_root
     }
 
     doc.update(overdoc)
-
-    _id, _rev = db.save(doc)
-    print "createProject(): Project '%s' created" % (name)
-
+    # get views document
+    views = getDefaultViews()
+    if views and doc:
+        # Create DB
+        db = createDb(name, adress)
+        _id, _rev = db.save(doc)
+        _id, _rev = db.save(views)
+        print "createProject(): Project '%s' created" % (name)
+    else:
+        print "createProject(): Can't create Project '%s'" % (name)
     return db
 
 
-def createProjectEnv(name=False):
+def createProjectBoot(name=False, serveradress=False, root=False,
+                      sync_root=False):
     """
     This function create a project environment file.
     It contains project environment variables related to the project.
@@ -657,16 +653,24 @@ def createProjectEnv(name=False):
 
     :param name: The project name.
     :type name: str
+    :param serveradress: The db server ip adress
+    :type serveradress: str
+    :param syncroot: The adress of the directory to sync
+    :type syncroot: str
     :returns:  str/bool -- If created return the file path else False
 
     **Example:**
 
-    >>> createProjectEnv(name="prod")
-    >>> '/homeworks/projects/prod/config/prod.env'
+    >>> createProjectBoot(name="prod", serveradress="127.0.0.1",
+    >>>                  syncroot="192.168.0.24:/homeworks")
+    >>> '/homeworks/projects/prod/boot/environment'
+    >>> '/homeworks/projects/prod/boot/toolchain'
     """
 
-    if not name:
+    if not name or not serveradress or not root or not sync_root:
         return False
+
+    root = "/" + root
 
     def getVersion(ver):
         if ver:
@@ -674,164 +678,31 @@ def createProjectEnv(name=False):
             ver = "%s.%s" % (ver[0], ver[1])
         return ver
 
-    projyaml = ""
-    projyaml += "name : %s\n" % name
-    projyaml += "uuid : %s\n" % uuid.uuid1()
-    projyaml += "description : 'This is the project %s'\n" % name
-    projyaml += "authors : [%s]\n" % utils.getUser()
-    projyaml += "config_version : 0\n"
-    projyaml += "version : 0.0.1\n"
+    # default toolchain definition
+    toolchain = "declare -a ToolChain=(\n"
+    toolchain += "'badass'\n"
+    toolchain += "'badtools'\n"
+    toolchain += ")\n"
 
-    # Package requires
-    projyaml += "requires :\n"
+    # default environment definition
+    env = "export BD_PROJECT=%s\n" % name
+    env += "export BD_ROOT=%s\n" % root
+    env += "export BD_HOME=$BD_ROOT/users/$USER\n"
+    env += "export BD_REPO=$BD_ROOT/projects\n"
+    env += "export BD_USER_REPO=$BD_HOME/projects\n"
+    env += "export BD_SHARE=$BD_ROOT/softwares/share\n"
+    env += "export BD_SYNCROOT=%s\n" % sync_root    # TODO: Fixe adress
+    env += "export BD_DBADRESS=badass:badass@%s\n" % serveradress
 
-    badassver = getVersion(utils.getBadassVersion())
-    if badassver:
-        projyaml += "- badass-%s\n" % badassver
-
-    mayaver = getVersion(os.getenv("BD_MAYAVER", False))
-    if mayaver:
-        projyaml += "- maya-%s\n" % mayaver
-
-    # Commands
-    projyaml += "commands:\n"
-    projyaml += "- export BD_PROJVER=!VERSION!\n"
-    projyaml += "- export BD_PROJECT=%s\n" % name
-    projyaml += "- export BD_ROOT=/homeworks\n"
-    projyaml += "- export BD_REPO=$BD_ROOT/projects\n"
-    projyaml += "- export BD_HOME=$BD_ROOT/users/$USER\n"
-    projyaml += "- export BD_USER_REPO=$BD_HOME/projects\n"
-    # export BD_PROJECT_ENV="$BD_REPO/$project/config/$project.env"
-    # projyaml += "- export PS1='\[\033[1;37m\]BD-REZ\[\033[1;34m\]
-    # |$BD_PROJECT>\[\033[0;33m\]\w$ \[\033[00m\]'\n"
-
-'''
-def oldCreateProjectEnv(name=False):
-    """
-    This function create a project environment file.
-    It contains project environment variables related to the project.
-    This file is sourced each times a user log a project via the bd-project.
-
-    :param name: The project name.
-    :type name: str
-    :param badassVersion: The asset manager version.
-    :type badassVersion: str
-    :returns:  str/bool -- If created return the file path else False
-
-    **Example:**
-
-    >>> createProjectEnv ( name = "prod" )
-    >>> '/homeworks/projects/prod/config/prod.env'
-    """
-
-    # Check the project name is
-    if (name is not None) and (name == ""):
-        return False
-
-    badassversion = utils.getBadassVersion()
-
-    # TODO:Create this document with a ui
-    env_data = "source $HOME/.bashrc\n"
-    env_data += "source $BD_ROOT/users/$USER/.bd/$BD_PROJECT\n\n"
-    env_data += "#Set environment variables\n"
-    env_data += "export BD_DBNAME=$BD_PROJECT\n"
-    env_data += "export BD_COAT_VER=4-0-03\n"
-    env_data += "export BD_COAT_VER_T=4-0-03\n"
-    env_data += "export BD_GUERILLA_VER=0.17.0b12\n"
-    env_data += "export BD_GUERILLA_VER_T=0.17.0b12\n"
-    env_data += "export BD_HIERO_VER=1.6v1\n"
-    env_data += "export BD_HIERO_PLAYER_VER=1.6v1\n"
-    env_data += "export BD_HOUDINI_VER=12.5\n"
-    env_data += "export BD_MARI_VER=2.0v1\n"
-    env_data += "export BD_MARI_VER_T=2.1v1a1\n"
-    env_data += "export BD_MAYA_ROOT=/usr/autodesk\n"
-    env_data += "export BD_MAYA_VER=2013\n"
-    env_data += "export BD_MODO_VER=701\n"
-    env_data += "export BD_MUDBOX_VER=2013\n"
-    env_data += "export BD_NUKE_VER=7.0v2\n"
-    env_data += "export BD_ASSVER=%s\n\n" % badassversion
-    env_data += "if $BD_DEV_MODE\n"
-    env_data += "    then\n"
-    env_data += "        bdmode=\"|dev\"\n"
-    env_data += "fi\n\n"
-    env_data += "alias work='cd $BD_HOME'\n\n"
-    env_data += "logpath=\"$BD_USER_REPO\"\n"
-    env_data += "export BD_ASS=\"$BD_CODE_PATH/python/asset-manager/$BD_ASSVER\"\n"
-    env_data += "export BD_COUCHDB=\"$BD_CODE_PATH/python/couchdb-python\"\n"
-    env_data += "export BD_PYSIDE=\"$BD_CODE_PATH/python/pyside\"\n"
-    env_data += "argparse=\"$BD_CODE_PATH/python/argparse\"\n"
-    env_data += "json=\"$BD_CODE_PATH/python/json\"\n"
-    env_data += "export PYTHONPATH=\"$BD_ASS:$json:$argparse:$PYTHONPATH\"\n\n"
-    env_data += "#Set PS1\n"
-    env_data += r"export PS1='\[\033[1;34m\]|\u@\h\[\033[1;37m\]|\t\[\033[1;31m\]|$BD_PROJECT$bdmode>\[\033[0;33m\]\w$ \[\033[00m\]'" + "\n\n"
-    env_data += "#Set the current directory\n"
-    env_data += "if ! ([ -d $logpath ])\n"
-    env_data += "      then\n"
-    env_data += "        mkdir -p $logpath\n"
-    env_data += "fi\n"
-
-    # Get the project env file
-    env_file = utils.getProjectEnv(name)
-
-    if env_file:
-        # Create Environment file
-        if utils.createFile(env_file, env_data):
-            print "createProjectEnv(): %s created " % env_file
-            return env_file
-        else:
-            print "createProjectEnv(): can't create %s " % env_file
-            return False
-    else:
-        print "createProjectEnv(): can't get project env %s " % env_file
-        return False
-'''
-
-
-def createProjectCred(name, db_server, host_root):
-    """
-    This function create a project credential file.
-    It contains the project **database server adress** and
-    the **host root adress**.
-
-    :param name: The project name.
-    :type name: str
-    :param db_server: The data base server adress.
-    :type db_server: str
-    :param host_root: The host server adress root path.
-    :type host_root: str
-    :returns:  str/bool -- return created credential path else False
-
-    **Example:**
-
-    >>> createProjectCred(name='prod',host_root='admin@192.168.0.9:/homeworks',
-                          db_server='admin:pass@192.168.0.100:5984')
-    >>> '/homeworks/users/jdoe/.bd/prod'
-    """
-
-    # Create credential file contains
-    cred = "export BD_DBADRESS=%s\n" % db_server
-    cred += "export BD_HOSTROOT=%s\n" % host_root
-
-    # Create credential file
-    root = utils.getLocalRoot()
-    user = utils.getUser()
-    file_cred = os.path.join(root, "users", user)
-    file_cred = os.path.join(file_cred, ".bd", name)
-
-    # Create the file with the collected credential data
-    iscreated = utils.createFile(file_cred, cred, True)
-
-    # Check if the file is created
-    if iscreated:
-
-        # Change the permission
-        os.chmod(file_cred, 0o600)
-
-        # Return the create file credential path (str)
-        return file_cred
-
-    else:
-        return False
+    # get toolchain and environment path
+    boot_dir = os.path.join(root, 'projects', name, 'boot')
+    env_file = os.path.join(boot_dir, "environment")
+    toolchain_file = os.path.join(boot_dir, "toolchain")
+    # create toolchain and environment file
+    utils.createFile(env_file, env)
+    utils.createFile(toolchain_file, toolchain)
+    os.chmod(env_file, 0o600)
+    os.chmod(toolchain_file, 0o600)
 
 
 # Repository ##################################################################

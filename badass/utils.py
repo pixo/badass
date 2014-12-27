@@ -321,11 +321,11 @@ def createFile(path="", content="", overwrite=False):
     else:
         os.chmod(dirnam, 0o775)
 
-    path = open(path, 'w')
-    path.write(content)
-    path.close()
+    fil = open(path, 'w')
+    fil.write(content)
+    fil.close()
 
-    return True
+    return path
 
 
 def getBadassVersion():
@@ -358,11 +358,11 @@ def getLocalRoot():
     return stat
 
 
-def getHostRoot():
-    # TODO: Documentation getHostRoot()
-    stat = os.getenv("BD_HOSTROOT", False)
+def getSyncRoot():
+    # TODO: Documentation getSyncRoot()
+    stat = os.getenv("BD_SYNCROOT", False)
     if not stat:
-        print("getHostRoot(): can't get BD_HOSTROOT")
+        print("getSyncRoot(): can't get BD_SYNCROOT")
     return stat
 
 
@@ -390,11 +390,13 @@ def getDbName():
     return stat
 
 
-def getDbAdress():
+def getDbAdress(ip_only=False):
     # TODO: Documentation getDbAdress()
     stat = os.getenv("BD_DBADRESS", False)
     if not stat:
         print("getDbAdress(): can't get BD_DBADRESS")
+    if ip_only and stat:
+        stat = stat.split('@')[-1]
     return stat
 
 
@@ -406,18 +408,18 @@ def getProjectName():
     return stat
 
 
-def getProjectEnv(project=""):
-    # TODO: Documentation getProjectEnv()
+def getProjectBootDir(project=False):
+    # TODO: Documentation getProjectBootDir()
     # Return a path for the project env file
-    if project == "":
+    if not project:
         project = getProjectName()
 
     repo = getRepo()
-    if repo:
-        envfile = os.path.join(repo, project, "config", project + ".env")
-        return envfile
+    if repo and project:
+        path = os.path.join(repo, project, "boot")
+        return path
     else:
-        print "getProjectEnv():can't get network repository"
+        print "getProjectBootDir():can't get project repository"
         return False
 
 
@@ -425,7 +427,7 @@ def isEnvSet():
     # TODO: Documentation isEnvSet()
     stat = [getUser(),
             getLocalRoot(),
-            getHostRoot(),
+            getSyncRoot(),
             getRepo(),
             getUserRepo(),
             getDbName(),
