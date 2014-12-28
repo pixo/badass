@@ -58,10 +58,10 @@ def serverExists(serveradress=""):
 
 def getDb(dbname="", serveradress=""):
     # TODO: Documentation for getDb()
-    if dbname == "" or dbname is None:
-        dbname = utils.getDbName()
+    if dbname == "" or not dbname:
+        dbname = utils.getProjectName()
 
-        if dbname == "" or dbname is None:
+        if dbname == "" or not dbname:
             print "getDb(): wrong dbname '%s'" % str(serveradress)
             return False
 
@@ -603,7 +603,8 @@ def createProject(name="", description="Default", db_server="", sync_root="",
     db = getDb(name, adress)
 
     # If DB and project exists return
-    if db is not False:
+    if db:
+        print "CreateProject(): Project already exists."
         return False
 
     # Adding db project documents
@@ -663,20 +664,15 @@ def createProjectBoot(name=False, serveradress=False, root=False,
 
     >>> createProjectBoot(name="prod", serveradress="127.0.0.1",
     >>>                  syncroot="192.168.0.24:/homeworks")
-    >>> '/homeworks/projects/prod/boot/environment'
-    >>> '/homeworks/projects/prod/boot/toolchain'
+    >>> '/homeworks/projects/prod/boot/environment.sh'
+    >>> '/homeworks/projects/prod/boot/toolchain.sh'
     """
 
     if not name or not serveradress or not root or not sync_root:
         return False
 
-    root = "/" + root
-
-    def getVersion(ver):
-        if ver:
-            ver = ver.split(".")
-            ver = "%s.%s" % (ver[0], ver[1])
-        return ver
+    if root[0] is not "/":
+        root = "/" + root
 
     # default toolchain definition
     toolchain = "declare -a ToolChain=(\n"
@@ -696,13 +692,14 @@ def createProjectBoot(name=False, serveradress=False, root=False,
 
     # get toolchain and environment path
     boot_dir = os.path.join(root, 'projects', name, 'boot')
-    env_file = os.path.join(boot_dir, "environment")
-    toolchain_file = os.path.join(boot_dir, "toolchain")
+    env_file = os.path.join(boot_dir, "environment.sh")
+    toolchain_file = os.path.join(boot_dir, "toolchain.sh")
+
     # create toolchain and environment file
     utils.createFile(env_file, env)
     utils.createFile(toolchain_file, toolchain)
-    os.chmod(env_file, 0o600)
-    os.chmod(toolchain_file, 0o600)
+    os.chmod(env_file, 0o644)
+    os.chmod(toolchain_file, 0o644)
 
 
 # Repository ##################################################################

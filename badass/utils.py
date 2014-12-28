@@ -382,14 +382,6 @@ def getUserRepo():
     return stat
 
 
-def getDbName():
-    # TODO: Documentation getDbName()
-    stat = os.getenv("BD_DBNAME", False)
-    if not stat:
-        print("getDbName(): can't get BD_DBNAME")
-    return stat
-
-
 def getDbAdress(ip_only=False):
     # TODO: Documentation getDbAdress()
     stat = os.getenv("BD_DBADRESS", False)
@@ -430,7 +422,6 @@ def isEnvSet():
             getSyncRoot(),
             getRepo(),
             getUserRepo(),
-            getDbName(),
             getDbAdress(),
             getProjectName()]
     return all(stat)
