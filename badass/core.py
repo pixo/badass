@@ -559,7 +559,7 @@ def lsProjectServer(serveradress):
 
 
 def createProject(name="", description="Default", db_server="", sync_root="",
-                  overdoc=dict()):
+                  overdoc=dict(), site_root="/homeworks"):
     """
     This function create a project.
 
@@ -571,6 +571,8 @@ def createProject(name="", description="Default", db_server="", sync_root="",
     :type db_server: str
     :param sync_root: The host data server root adress
     :type sync_root: str
+    :param site_root: The site root folder
+    :type site_root: str
     :param overdoc: A dictionnary that contains extra document attributes.
     :type overdoc: dict
     :returns:  couchdb.client.Database -- return the db.
@@ -585,6 +587,9 @@ def createProject(name="", description="Default", db_server="", sync_root="",
     # Check if DB server exists
     adress = "http://%s/" % db_server
     exists = serverExists(adress)
+
+    if site_root[0] is not "/":
+        site_root = "/" + site_root
 
     if not exists:
         print "createProject(): Wrong DB server adress,user or/and password"
@@ -625,7 +630,7 @@ def createProject(name="", description="Default", db_server="", sync_root="",
         "asset_tasks": tasks,
         "creator": user,
         "created": time.time(),
-        "root": "/homeworks",
+        "root": site_root,
         "users": users,
         "status": {"art": "ns", "tech": "ns"},
         "host": sync_root
@@ -650,7 +655,6 @@ class RepositoryError (Exception):
 
     """
     Error raised by the repository module.
-
     """
 
     def __init__(self, value):
@@ -674,11 +678,10 @@ def getIdFromFile(path=""):
     >>> 'prod_chr_mickey_mod_a'
     """
 
-    # Check if the path exists
+    # Check if the path exists):
     if not os.path.exists(path):
-        raise RepositoryError(
-            "Can't get 'doc_id' from '%s', path doesn't exists." %
-            path)
+        raise RepositoryError("getIdFromFile():Can't get 'doc_id' from '%s'." %
+                              path)
 
     basename = os.path.basename(path)
     doc_id = os.path.splitext(basename)[0]
@@ -698,7 +701,6 @@ def getIdFromPath(path=""):
 
     >>> getIdFromPath(path="/homeworks/user/jdoe/prod/ch/mimi/mod/a/file.ext")
     >>> 'prod_ch_mimi_mod_a'
-
     """
 
     # Check if the path exists
@@ -727,7 +729,7 @@ def getPathFromId(doc_id="", local=False, vtype="review"):
     :type doc_id: str
     :param local: If true return the user local repository path
     :type local: bool
-    :param vtype: Version type *trial/stock*
+    :param vtype: Version type *review/release*
     :type vtype: str
     :returns:  str -- The asset or task path.
 
