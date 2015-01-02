@@ -6,6 +6,7 @@ Created on Nov 12, 2013
 import os
 import hashlib
 import time
+import subprocess
 
 
 def getTextureTypes():
@@ -425,3 +426,44 @@ def isEnvSet():
             getDbAdress(),
             getProjectName()]
     return all(stat)
+
+
+def getPemToolsPath():
+    path = "/badass/sbin/pem/tools"
+    return path
+
+
+def mkdir(path=False, mode="755"):
+    # TODO: Documentation for mkdirs()
+    """
+    """
+    if path:
+        tools = getPemToolsPath()
+        tools = os.path.join(tools, "bd-mkdir")
+        return subprocess.check_output([tools, "-p", "-m", mode, path])
+    else:
+        return False
+
+
+def rm(path):
+    # TODO: Documentation for rm()
+    """
+    """
+    if path:
+        tools = getPemToolsPath()
+        tools = os.path.join(tools, "bd-rm")
+        return subprocess.check_output(["rm", "-rfv", path])
+    else:
+        return False
+
+
+def cp(source, destination):
+    # TODO: Documentation for cp()
+    """
+    """
+    if source and destination:
+        tools = getPemToolsPath()
+        tools = os.path.join(tools, "bd-cp")
+        return subprocess.check_output([tools, "-rl", source, destination])
+    else:
+        return False
