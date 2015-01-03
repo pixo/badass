@@ -7,6 +7,140 @@ import os
 import hashlib
 import time
 import subprocess
+import uuid
+
+
+def getPemToolsPath():
+    path = "/badass/sbin/pem/tools"
+    return path
+
+
+def chown(path):
+    # TODO: Documentation for cp()
+    """
+    """
+    if path:
+        tools = getPemToolsPath()
+        tools = os.path.join(tools, "bd-chown")
+        return subprocess.check_output([tools, "-R", "badass", path])
+    else:
+        return False
+
+
+def chgrp(path):
+    # TODO: Documentation for cp()
+    """
+    """
+    if path:
+        tools = getPemToolsPath()
+        tools = os.path.join(tools, "bd-chgrp")
+        return subprocess.check_output([tools, "-R", "badass", path])
+    else:
+        return False
+
+
+def chmod(path, mode="755"):
+    # TODO: Documentation for rm()
+    """
+    """
+    if path:
+        tools = getPemToolsPath()
+        tools = os.path.join(tools, "bd-chmod")
+        return subprocess.check_output([tools, "-R", mode, path])
+    else:
+        return False
+
+
+def mkdir(path=False, mode="755"):
+    # TODO: Documentation for mkdirs()
+    """
+    """
+    if path:
+        tools = getPemToolsPath()
+        tools = os.path.join(tools, "bd-mkdir")
+        return subprocess.check_output([tools, "-p", "-m", mode, path])
+    else:
+        return False
+
+
+def rm(path):
+    # TODO: Documentation for rm()
+    """
+    """
+    if path:
+        tools = getPemToolsPath()
+        tools = os.path.join(tools, "bd-rm")
+        return subprocess.check_output([tools, "-rfv", path])
+    else:
+        return False
+
+
+def cp(source, destination):
+    # TODO: Documentation for cp()
+    """
+    """
+    if source and destination:
+        tools = getPemToolsPath()
+        tools = os.path.join(tools, "bd-cp")
+        dir = os.path.dirname(destination)
+        if not os.path.exists(dir):
+            mkdir(dir)
+        stat = subprocess.check_output([tools, "-r", source, destination])
+        chmod(destination)
+        return stat
+    else:
+        return False
+
+
+def mv(source, destination):
+    # TODO: Documentation for cp()
+    """
+    """
+    if source and destination:
+        tools = getPemToolsPath()
+        tools = os.path.join(tools, "bd-mv")
+        dir = os.path.dirname(destination)
+        if not os.path.exists(dir):
+            mkdir(dir)
+        return subprocess.check_output([tools, source, destination])
+    else:
+        return False
+
+
+def ln(source, destination):
+    """
+    """
+    if source and destination:
+        tools = getPemToolsPath()
+        tools = os.path.join(tools, "bd-ln")
+        dir = os.path.dirname(destination)
+        if not os.path.exists(dir):
+            mkdir(dir)
+        return subprocess.check_output([tools, source, destination])
+    else:
+        return False
+
+
+def createFile(path="", content="", overwrite=False):
+    # TODO: documentation createFile()
+    if os.path.exists(path) and (not overwrite):
+        print "createFile (): %s already exists." % path
+        return False
+
+    var = str(uuid.uuid1())
+    tmp = os.path.join("/tmp", var)
+    fil = open(tmp, 'w')
+    fil.write(content)
+    fil.close()
+
+    dirnam = os.path.dirname(path)
+    mkdir(dirnam)
+    cp(tmp, path)
+
+    if os.path.exists(path):
+        return path
+    else:
+        return False
 
 
 def getTextureTypes():
@@ -271,64 +405,6 @@ def getVersionType():
     return ["review", "release"]
 
 
-def compareFile(file_a="", file_b=""):
-    # TODO: Documentation for compareFile()
-    # TODO: use default python function filecmp.cmp
-    """
-    This function compare two files contains based on sha1.
-    It is very useful if you need to know if two files are the same.
-
-    :param file_a: The first file path
-    :type file_a: str
-    :param file_b: The second file path
-    :type file_b: str
-    :returns:  bool -- True if file are the same.
-    :raises: RepositoryError if one of the file doesn't exists.
-
-    **Example:**
-
-    >>> compareFile(file_a="/home/user/filea", file_b="/home/user/fileb")
-    >>> True
-    """
-
-    # Check if the file_a exists
-    if os.path.exists(file_a):
-        raise Exception("Can't compare '%s', file doesn't exists." % file_a)
-
-    # Check if the file_b exists
-    if not os.path.exists(file_b):
-        raise Exception("Can't compare '%s', file doesn't exists." % file_b)
-
-    # Compare the sha1 hash of the files
-    if hashFile(file_a) == hashFile(file_b):
-        # if the file are the same return True
-        return True
-    else:
-        # if they are not the same return False
-        return False
-
-
-def createFile(path="", content="", overwrite=False):
-    # TODO: documentation createFile()
-    if os.path.exists(path) and (not overwrite):
-        print "createFile (): %s already exists." % path
-        return False
-
-    dirnam = os.path.dirname(path)
-
-    if not os.path.exists(dirnam):
-        os.makedirs(dirnam, 0o775)
-
-    else:
-        os.chmod(dirnam, 0o775)
-
-    fil = open(path, 'w')
-    fil.write(content)
-    fil.close()
-
-    return path
-
-
 def getBadassVersion():
     """
     This function return the version of the Badass SDK.
@@ -428,42 +504,5 @@ def isEnvSet():
     return all(stat)
 
 
-def getPemToolsPath():
-    path = "/badass/sbin/pem/tools"
-    return path
-
-
-def mkdir(path=False, mode="755"):
-    # TODO: Documentation for mkdirs()
-    """
-    """
-    if path:
-        tools = getPemToolsPath()
-        tools = os.path.join(tools, "bd-mkdir")
-        return subprocess.check_output([tools, "-p", "-m", mode, path])
-    else:
-        return False
-
-
-def rm(path):
-    # TODO: Documentation for rm()
-    """
-    """
-    if path:
-        tools = getPemToolsPath()
-        tools = os.path.join(tools, "bd-rm")
-        return subprocess.check_output(["rm", "-rfv", path])
-    else:
-        return False
-
-
-def cp(source, destination):
-    # TODO: Documentation for cp()
-    """
-    """
-    if source and destination:
-        tools = getPemToolsPath()
-        tools = os.path.join(tools, "bd-cp")
-        return subprocess.check_output([tools, "-rl", source, destination])
-    else:
-        return False
+class BadassCmd():
+    """ """

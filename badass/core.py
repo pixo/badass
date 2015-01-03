@@ -1,6 +1,5 @@
 import os
 import time
-import uuid
 import glob
 import shutil
 import re
@@ -182,7 +181,7 @@ class AssetError(Exception):
 
 
 def createAsset(
-        db=None, doc_id="", description="", overdoc=dict(), debug=False):
+        db=None, doc_id="", comment="", overdoc=dict(), debug=False):
     """
     This function create an **asset** into the provided database.
 
@@ -190,8 +189,8 @@ def createAsset(
     :type db: couchdb.client.Database
     :param doc_id: The asset code.
     :type doc_id: str
-    :param description: The asset description.
-    :type description: str
+    :param comment: The asset comment.
+    :type comment: str
     :param overdoc: A dictionnary that contains extra document attributes.
     :type overdoc: dict
     :returns:  document -- The database document.
@@ -233,7 +232,7 @@ def createAsset(
         "inactive": False,
         "parents": {},
         "children": {},
-        "description": description,
+        "comment": comment,
         "creator": utils.getUser(),
         "created": time.time(),
         "status": {"art": "ns", "tec": "ns"},
@@ -254,7 +253,7 @@ def createAsset(
 
 
 def createTask(
-        db=None, doc_id="", description="", overdoc=dict(), debug=False):
+        db=None, doc_id="", comment="", overdoc=dict(), debug=False):
     """
     This function create a **task** into the provided database.
 
@@ -262,8 +261,8 @@ def createTask(
     :type db: couchdb.client.Database
     :param doc_id: The asset code.
     :type doc_id: str
-    :param description: The asset description.
-    :type description: str
+    :param comment: The asset comment.
+    :type comment: str
     :param overdoc: A dictionnary that contains extra document attributes.
     :type overdoc: dict
     :returns:  document -- The database document.
@@ -315,7 +314,7 @@ def createTask(
         "parents": {},
         "children": {},
         "comments": {},
-        "description": description,
+        "comment": comment,
         "creator": utils.getUser(),
         "created": time.time(),
         "status": {"art": "ns", "tec": "ns"},
@@ -334,7 +333,7 @@ def createTask(
     return db[_id]
 
 
-def createPack(db=None, doc_id="", description="No description"):
+def createPack(db=None, doc_id="", comment="No comment"):
     """
     This function create an asset of type **Pack** into the provided database.
 
@@ -342,27 +341,27 @@ def createPack(db=None, doc_id="", description="No description"):
     :type db: couchdb.client.Database
     :param doc_id: The asset code.
     :type doc_id: str
-    :param description: The asset description.
-    :type description: str
+    :param comment: The asset comment.
+    :type comment: str
     :returns:  document -- The database document.
     :raises: AttributeError, KeyError
 
     **Example:**
 
     >>> db = getDb( dbname = "prod" , serveradress = "127.0.0.1:5984" )
-    >>> createPack(db=db, doc_id="prod_pck_mickey",description = "mickey pack")
+    >>> createPack(db=db, doc_id="prod_pck_mickey",comment = "mickey pack")
     """
 
     # Extra shot attributes
     overdoc = {"pack": {}}
 
     # Create asset shot with shot extra attributes
-    result = createAsset(db, doc_id, description, overdoc)
+    result = createAsset(db, doc_id, comment, overdoc)
 
     return result
 
 
-def createShot(db=None, doc_id="", description="No description",
+def createShot(db=None, doc_id="", comment="No comment",
                cut_in=1, cut_out=100):
     """
     This function create an asset of type **Shot** into the provided database.
@@ -371,8 +370,8 @@ def createShot(db=None, doc_id="", description="No description",
     :type db: couchdb.client.Database
     :param doc_id: The asset code.
     :type doc_id: str
-    :param description: The asset description.
-    :type description: str
+    :param comment: The asset comment.
+    :type comment: str
     :param cut_in: The first frame of the shot.
     :type cut_in: float
     :param cut_out: The last frame of the shot.
@@ -384,7 +383,7 @@ def createShot(db=None, doc_id="", description="No description",
 
     >>> db = getDb( dbname = "prod" , serveradress = "127.0.0.1:5984" )
     >>> createShot(db=db, doc_id="prod_shot_op001", cut_in=1, cut_out=100,
-                description="This is the shot openning 001" )
+                comment="This is the shot openning 001" )
 
     """
 
@@ -394,7 +393,7 @@ def createShot(db=None, doc_id="", description="No description",
                "cut_out": cut_out}
 
     # Create asset shot with shot extra attributes
-    result = createAsset(db, doc_id, description, overdoc)
+    result = createAsset(db, doc_id, comment, overdoc)
 
     return result
 
@@ -558,15 +557,15 @@ def lsProjectServer(serveradress):
     return projects
 
 
-def createProject(name="", description="Default", db_server="", sync_root="",
-                  overdoc=dict(), site_root="/homeworks"):
+def createProject(name="", comment="Default", db_server="", sync_root="",
+                  overdoc=dict(), site_root="/badass"):
     """
     This function create a project.
 
     :param name: The project name
     :type name: str
-    :param description: The project description
-    :type description: str
+    :param comment: The project comment
+    :type comment: str
     :param db_server: The data base adress
     :type db_server: str
     :param sync_root: The host data server root adress
@@ -580,7 +579,7 @@ def createProject(name="", description="Default", db_server="", sync_root="",
 
     **Example:**
 
-    >>> createProject(name="prod", description="this is the project prod",
+    >>> createProject(name="prod", comment="this is the project prod",
                     db_server="admin:pass@127.0.0.1:5984",
                     sync_root="admin@127.0.0.1:/homeworks" )
     """
@@ -625,7 +624,7 @@ def createProject(name="", description="Default", db_server="", sync_root="",
         "_id": "%s" % name,
         "type": "project",
         "name": name,
-        "description": description,
+        "comment": comment,
         "asset_types": assets,
         "asset_tasks": tasks,
         "creator": user,
@@ -790,12 +789,12 @@ def getVersions(db=None, doc_id="", vtype="review"):
     >>> {'1': {'files': ['bls_chr_belanus_mod_main.mb'],
                 'path': '/homeworks/projects/bls/chr/belanus/mod/main/001',
                 'created': '2013 Mar 08 21:16:34',
-                'description': 'names cleaned\nnormal softened',
+                'comment': 'names cleaned\nnormal softened',
                 'creator': 'pixo'},
         '3': {'files': ['bls_chr_belanus_mod_main.mb'],
                 'path': '/homeworks/projects/bls/chr/belanus/mod/main/003',
                 'created': '2013 Mar 08 23:13:54',
-                'description': 'test export gproject etc', 'creator': 'pixo'},
+                'comment': 'test export gproject etc', 'creator': 'pixo'},
         '2': {'files': ['bls_chr_belanus_mod_main.mb'] ... and so ... }
     """
 
@@ -881,7 +880,7 @@ def getLocalVersionPath(doc_id="", version=1, vtype="review"):
 
     # Get asset local path
     fdir = getPathFromId(doc_id=doc_id, local=True, vtype=vtype)
-    name = "%s.from_v%03d.base" % (vtype, version)
+    name = "%s.from_v%04d.base" % (vtype, version)
     dst = os.path.join(fdir, name)
 
     # Return a path that doesn't exist
@@ -1010,7 +1009,7 @@ def transfer(sources=list(), destination="", doc_id="", rename=True):
             print "Warning: %s doesn't exist" % src
 
     # Set the permission file
-    os.chmod(destination, 0o775)
+    utils.chmod(destination, 755)
 
     # Iterate over files
     for fil in files:
@@ -1019,9 +1018,7 @@ def transfer(sources=list(), destination="", doc_id="", rename=True):
         if not os.path.exists(dirname):
             os.makedirs(dirname)
 
-        shutil.copy(fil, files[fil])
-    # TODO: replace os.system with a python function
-    os.system("chmod -R 555  %s" % destination)
+        utils.cp(fil, files[fil])
 
 
 def pull(db=None, doc_id="", version="last", extension=False,
@@ -1117,332 +1114,67 @@ def pull(db=None, doc_id="", version="last", extension=False,
     return pulled
 
 
-def push(db="", doc_id="", path=list(), description="",
-         progressbar=False, msgbar=False, rename=True, vtype="review"):
+def push(doc_id=False, path=False, comment=False, vtype="review"):
     """
     This function copy the desired file from local workspace to repository.
 
-    :param db: the database
-    :type db: Database
     :param doc_id: The asset code
     :type doc_id: str
     :param path: The list of files to push
     :type path: str/list of str
-    :param description: This is the description of the push
-    :type description: str
-    :param progressbar: The pyside progress bar
-    :type progressbar: PySide progressbar
-    :param msg: The pyside message bar
-    :type progressbar: PySide messagebar
-    :param rename: Rename the file (default True)
-    :type rename: bool -- if True rename the file(s)
-    :param vtype: Version type *trial/stock*
+    :param comment: This is the comment of the push
+    :type comment: str
+    :param vtype: Version type *review/release*
     :type vtype: str
     :returns: str -- Return the published directory
 
     **Example:**
     >>> path="/homeworks/users/jdoe/projects/bls/chr/mimi/mod/a/file.mb"
-    >>> db = badass.core.getDb()
-    >>> push( db=db, doc_id="bls_chr_mimi_mod_a", path=path,
-    >>>        description="this is a modeling version of belanus" )
-
+    >>> push(doc_id="bls_chr_mimi_mod_a", path=path, comment="my comments")
     """
 
-    # Make sure vtype exists
-    if not (vtype in utils.getVersionType()):
-        return False
+    if not all([path, doc_id, comment, vtype]):         # Check arguments
+        print("pushfile(): wrong arguments.")
+        return
 
-    # TODO: Check push for auto screenshot publish
-    # Check the path type is a list
-    if isinstance(path, str):
-        path = list([path])
+    def getAssetRepo(path, doc_id):
+        if os.path.isdir(path):
+            return doc_id
+        tmp, ext = os.path.splitext(path)               # Get file extension
+        name = doc_id+ext
+        return name
 
-    # check if the source file exists in the repository
-    file_list = list()
+    db = getDb()                                        # Get DB
+    doc = db[doc_id]                                    # Get asset document
+    ver_attr = getVersions(db, doc_id, vtype=vtype)     # Get versions document
+    ver = len(ver_attr) + 1                             # Get last version num
+    ver_num = "%04d" % ver                              # Convert to string
 
-    for src in path:
-        if os.path.exists(src):
-            file_list.append(src)
+    repo = getPathFromId(doc_id, vtype=vtype)           # Get asset repo
+    name = getAssetRepo(path, doc_id)                   # Get name
 
-        else:
-            print "Warning: %s doesn't exist" % src
+    tmp_dname = ver_num+'_'+utils.hashTime()            # Get tmpdir name
+    source_dir = os.path.join(repo, tmp_dname)          # Get source dir
+    source = os.path.join(source_dir, name)             # Get source path
+    target_dir = os.path.join(repo, ver_num)            # Get target dir
+    target = os.path.join(target_dir, name)             # Get target path
 
-    # Get root destination directory to push files
-    dst_dir = getPathFromId(doc_id, vtype=vtype)
-
-    # Get temporary destination directory to push files
-    tmp_dir = os.path.join(dst_dir, utils.hashTime())
-
-    # Create temporary directory
-    if not os.path.exists(tmp_dir):
-        os.makedirs(tmp_dir)
-
-    # Copy all the files in the destination directory
-    progress_value = 0
-    progress_step = 100.0 / len(file_list)
-    files_attr = list()
-    wspace = getPathFromId(doc_id=doc_id, local=True, vtype=vtype)
-
-    # Iterate over all the provided source files
-    for src in file_list:
-        # Get file dir
-        src_dir = os.path.dirname(src)
-        # file space in case we need to publish directories
-        file_space = src_dir.replace(wspace, "")
-        file_name = os.path.join(file_space, os.path.basename(src))
-
-        # Get extension(s) ,UDIMs and frames are commonly separated with this
-        # char
-        file_ext = "." + file_name.split(".")[-1]
-
-        # Get screenshot file
-        screenshot = False
-        screenshot_exts = [".jpg", ".jpeg", ".png"]
-        screenshot_ext = ""
-
-        for ext in screenshot_exts:
-            screenpath = file_name + ext
-            screenpath = os.path.join(src_dir, screenpath)
-
-            if os.path.exists(screenpath):
-                screenshot_ext = ext
-                screenshot = screenpath
-                break
-            else:
-                screenpath = screenpath.replace("." + file_ext, ext)
-                if screenpath != file_name:
-                    if os.path.exists(screenpath):
-                        screenshot_ext = ext
-                        screenshot = screenpath
-
-        # Creating the full filename
-        if rename:
-            dst_file = doc_id + file_ext
-            dst_screenshot = doc_id + screenshot_ext
-        else:
-            dst_file = file_name
-            dst_screenshot = screenshot
-
-        if dst_file[0] == os.sep:
-            dst_file = dst_file[1:]
-
-        tmp_file = os.path.join(tmp_dir, dst_file)
-
-        # Store the files names in a list to avoid to call the database for
-        # each source file
-        files_attr.append(dst_file)
-
-        # Copy files to temporary directory
-        shutil.copy(src, tmp_file)
-
-        # Copy screenshot to temporary directory
-        if screenshot:
-            if dst_screenshot[0] == os.sep:
-                dst_screenshot = dst_screenshot[1:]
-            tmp_screenshot = os.path.join(tmp_dir, dst_screenshot)
-            shutil.copy(screenshot, tmp_screenshot)
-
-        # Set progress value
-        progress_value += progress_step
-        if progressbar:
-            progressbar.setProperty("value", progress_value)
-        else:
-            print (str(progress_value) + "%")
-
-        if msgbar:
-            msgbar(dst_file)
-
-    # Get latest version
-    doc = db[doc_id]
-    ver_attr = getVersions(db, doc_id, vtype=vtype)
-    ver = len(ver_attr) + 1
-    path_attr = os.path.join(dst_dir, "%03d" % ver)
-    repo = os.path.expandvars(path_attr)
-
-    # Rename the temp dir
-    os.rename(tmp_dir, repo)
-
-    # TODO:Replace os.system ( "chmod -R 555  %s" % repo ) by python function
-    os.system("chmod -R 555  %s" % repo)
-
-    # Create the new version data for the "versions" document's attribute
-    fileinfo = {"creator": utils.getUser(),
-                "created": time.time(),
-                "description": description,
-                "path": path_attr,
-                "files": files_attr,
-                "release": list()}
-
-    # Check status
-    status = doc["status"]
-    if status["tec"] == "ns":
-        status["tec"] = "wip"
-        doc["status"] = status
-
-    # Append the data into the document version attribute copy
+    # Create the version data for "versions" document's attribute
+    fileinfo = dict()
+    fileinfo["creator"] = utils.getUser()
+    fileinfo["created"] = time.time()
+    fileinfo["comment"] = comment
+    fileinfo["path"] = target
+    fileinfo["release"] = list()
     ver_attr[ver] = fileinfo
-
-    # Replace the original "versions" attribute by our modified version
     doc[vtype] = ver_attr
-
-    # Push the info into the db
     db[doc_id] = doc
 
-    # print published file for the user
-    for fil in files_attr:
-        print os.path.join(repo, fil)
-
-    # Return the published directory
-    return repo
-
-
-def pushDir(db="", doc_id="", path=list(), description="", vtype="review"):
-    """
-    This function copy the desired file from local workspace to repository.
-
-    :param db: the database
-    :type db: Database
-    :param doc_id: The asset code
-    :type doc_id: str
-    :param path: directory or The list of directories to push
-    :type path: str/list of str
-    :param description: This is the description of the push
-    :type description: str
-    :param vtype: Version type *trial/stock*
-    :type vtype: str
-    :returns: str -- Return the published directory
-
-    **Example:**
-
-    >>> db=getDb()
-    >>> pushDir(db=db, doc_id="bls_chr_poo_tex_a",
-    >>>         path="/homeworks/users/jdoe/projects/bls/chr/poo/tex/a/pushit",
-    >>>         description="This is a publish")
-    """
-    # Make sure vtype exists
-    if not (vtype in utils.getVersionType()):
-        return False
-
-    # check if the source file exists in the repository
-    if not os.path.exists(path):
-        print "pushDir(): %s doesn't exist" % path
-        return False
-
-    # Get root destination directory to push files
-    dst_dir = getPathFromId(doc_id=doc_id, vtype=vtype)
-
-    # Get temporary destination directory to push files
-    tmp_dir = os.path.join(dst_dir, utils.hashTime())
-    os.makedirs(tmp_dir)
-
-    # Copy all the files in the destination directory
-    files_attr = list()
-    file_list = os.listdir(path)
-
-    for src in file_list:
-        # file space in case we need to publish directories """
-        path_src = os.path.join(path, src)
-        dst = os.path.join(tmp_dir, src)
-
-        if os.path.isfile(path_src):
-            print "pushDir(): copying file %s " % src
-            shutil.copy(path_src, dst)
-        elif os.path.isdir(path_src):
-            print "pushDir(): copying directory %s " % src
-            shutil.copytree(path_src, dst)
-
-        # Store the files names in a list to avoid to call the database for
-        # each source file
-        files_attr.append(src)
-
-    # Get latest version number because somebody may push a new version during
-    # the process
-    doc = db[doc_id]
-    ver_attr = getVersions(db=db, doc_id=doc_id, vtype=vtype)
-    ver = len(ver_attr) + 1
-    path_attr = os.path.join(dst_dir, "%03d" % ver)
-    repo = os.path.expandvars(path_attr)
-
-    # Rename the temp dir
-    os.rename(tmp_dir, repo)
-    os.chmod(repo, 0o555)
-
-    # Create the new version data for the "versions" document's attribute
-    fileinfo = {
-        "creator": utils.getUser(),
-        "created": time.time(),
-        "description": description,
-        "path": path_attr,
-        "files": files_attr
-    }
-
-    # Append the data into the document version attribute copy
-    ver_attr[ver] = fileinfo
-
-    # Replace the original "versions" attribute by our modified version
-    doc[vtype] = ver_attr
-
-    # Push the info into the db
-    db[doc_id] = doc
-
-    # print published file for the user
-    for fil in files_attr:
-        print os.path.join(repo, fil)
-
-    # Return the published directory
-    return repo
-
-
-def pushFile(db=None, doc_id=False, path=list(),
-             description="", rename=True, vtype="review"):
-    """
-    This function copy the desired file from local workspace to repository.
-
-    :param db: the database
-    :type db: Database
-    :param doc_id: The asset code
-    :type doc_id: str
-    :param path: The list of files to push
-    :type path: str/list of str
-    :param description: This is the description of the push
-    :type description: str
-    :param rename: Rename the file (default True)
-    :type rename: bool -- if True rename the file(s)
-    :param vtype: Version type *trial/stock*
-    :type vtype: str
-    :returns: str -- Return the directory of the pushed files
-
-    **Example:**
-
-    >>> db = badass.core.getDb()
-    >>> push(db=db, doc_id="bls_chr_ooo_mod_a",
-    >>>      path="/homeworks/users/jdoe/projects/bls/chr/ooo/mod/a/pushit.mb")
-    """
-    # Make sure vtype exists
-    if not (vtype in utils.getVersionType()):
-        return False
-
-    # Check if DB is provided else get the project DB
-    if (not db) or db == "":
-        db = getDb()
-
-    # Check if 'path' is a string
-    if isinstance(path, str):
-
-        # If 'path' is a string then append it in a list
-        path = list([path])
-
-    # If doc_id not provided
-    if not doc_id:
-
-        # Get doc_id from path
-        doc_id = getIdFromPath(path=path[0])
-
-    # Return the directory of the pushed files
-    result = push(db=db, doc_id=doc_id, path=path,
-                  description=description, progressbar=False,
-                  msgbar=False, rename=rename, vtype=vtype)
-    return result
+    utils.cp(path, source)          # Copying local file to temporary
+    utils.mv(source, target)        # Move temporary file to destination
+    utils.rm(source_dir)            # Remove temporary file
+    print target
+    return target                   # Return published file/dir full path
 
 
 def release(db=None, docId=False, version=False):
@@ -1464,13 +1196,11 @@ def release(db=None, docId=False, version=False):
     release = doc["release"]
     last = str(len(release) + 1)
     releaseVersion = dict()
-    releaseVersion["description"] = reviewVersion["description"]
+    releaseVersion["comment"] = reviewVersion["comment"]
     releaseVersion["review"] = version
     releaseVersion["path"] = getPathFromId(doc_id=docId, vtype="release")
-    releaseVersion["path"] = os.path.join(
-        releaseVersion["path"],
-        "%03d" %
-        int(last))
+    releaseVersion["path"] = os.path.join(releaseVersion["path"], "%04d" %
+                                          int(last))
     releaseVersion["created"] = time.time()
     releaseVersion["creator"] = utils.getUser()
     release[last] = releaseVersion
@@ -1484,7 +1214,7 @@ def release(db=None, docId=False, version=False):
 
     src = reviewVersion["path"]
     dst = releaseVersion["path"]
-    shutil.copytree(src, dst)
+    utils.cp(src, dst)
     _id, _rev = db.save(doc)
 
 # Texture #####################################################################
@@ -1791,7 +1521,7 @@ def textureCheck(doc_id="", files=list()):
     return not_success
 
 
-def texturePush(db=None, doc_id="", path="", description="",
+def texturePush(db=None, doc_id="", path="", comment="",
                 progressbar=False, msgbar=False, rename=False, vtype="review"):
     """
     This function copy the desired file from local workspace to repository.
@@ -1802,8 +1532,8 @@ def texturePush(db=None, doc_id="", path="", description="",
     :type doc_id: str
     :param path: The path that contains the textures
     :type path: str
-    :param description: This is the description of the push
-    :type description: str
+    :param comment: This is the comment of the push
+    :type comment: str
     :param progressbar: The pyside progress bar
     :type progressbar: PySide progressbar
     :param msg: The pyside message bar
@@ -1819,7 +1549,7 @@ def texturePush(db=None, doc_id="", path="", description="",
     >>> path = "/homeworks/users/jdoe/projects/bls/chr/mimi/mod/a/ftp.mb"
     >>> db = core.getDb()
     >>> texturePush(db=db, doc_id="bls_chr_mimi_mod_a", path=path,
-    >>>            description="this is a texture version of belanus")
+    >>>            comment="this is a texture version of belanus")
     """
     # Make sure vtype exists
     if not (vtype in utils.getVersionType()):
@@ -1860,7 +1590,7 @@ def texturePush(db=None, doc_id="", path="", description="",
             db=db,
             doc_id=doc_id,
             path=path,
-            description=description,
+            comment=comment,
             vtype=vtype)
         return pushed
     else:
