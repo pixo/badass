@@ -5,7 +5,8 @@ import shutil
 import re
 import commands
 import couchdb
-import badass.utils as utils
+import utils
+import plugin
 
 
 # DATABASE ####################################################################
@@ -1114,6 +1115,18 @@ def pull(db=None, doc_id="", version="last", extension=False,
     return pulled
 
 
+def pushCallback(action):
+    plugins = plugin.getPlugins("push")
+
+    def wrapper(**kwargs):
+        plugins.pre(**kwargs)
+        stat = action(**kwargs)
+        plugins.post(stat=stat, **kwargs)
+
+    return wrapper
+
+
+@pushCallback
 def push(doc_id=False, path=False, comment=False, vtype="review"):
     """
     This function copy the desired file from local workspace to repository.
@@ -1586,12 +1599,7 @@ def texturePush(db=None, doc_id="", path="", comment="",
     # If every textures success the check
     if len(texCheck) == 0:
         # Push the directory containing the textures
-        pushed = pushDir(
-            db=db,
-            doc_id=doc_id,
-            path=path,
-            comment=comment,
-            vtype=vtype)
+        pushed = push(doc_id=doc_id, path=path, comment=comment, vtype=vtype)
         return pushed
     else:
         for tex in texCheck:

@@ -82,9 +82,9 @@ def cp(source, destination):
     if source and destination:
         tools = getPemToolsPath()
         tools = os.path.join(tools, "bd-cp")
-        dir = os.path.dirname(destination)
-        if not os.path.exists(dir):
-            mkdir(dir)
+        dst_dir = os.path.dirname(destination)
+        if not os.path.exists(dst_dir):
+            mkdir(dst_dir)
         stat = subprocess.check_output([tools, "-r", source, destination])
         chmod(destination)
         return stat
@@ -99,9 +99,9 @@ def mv(source, destination):
     if source and destination:
         tools = getPemToolsPath()
         tools = os.path.join(tools, "bd-mv")
-        dir = os.path.dirname(destination)
-        if not os.path.exists(dir):
-            mkdir(dir)
+        dst_dir = os.path.dirname(destination)
+        if not os.path.exists(dst_dir):
+            mkdir(dst_dir)
         return subprocess.check_output([tools, source, destination])
     else:
         return False
@@ -113,9 +113,9 @@ def ln(source, destination):
     if source and destination:
         tools = getPemToolsPath()
         tools = os.path.join(tools, "bd-ln")
-        dir = os.path.dirname(destination)
-        if not os.path.exists(dir):
-            mkdir(dir)
+        dst_dir = os.path.dirname(destination)
+        if not os.path.exists(dst_dir):
+            mkdir(dst_dir)
         return subprocess.check_output([tools, source, destination])
     else:
         return False
@@ -502,7 +502,3 @@ def isEnvSet():
             getDbAdress(),
             getProjectName()]
     return all(stat)
-
-
-class BadassCmd():
-    """ """

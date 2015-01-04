@@ -3,10 +3,11 @@ uuid : 9ff6a484-e482-40e1-ac55-e259a5f58597
 description : "Badass is an asset manager SDK."
 authors : [Rachid Chikh]
 config_version : 0
-version : 0.0.13
+version : 0.0.14
 
 requires :
 - couchdb
+- blessings
 
 commands:
 - export BD_ASSVER=!VERSION!

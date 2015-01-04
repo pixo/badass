@@ -1,4 +1,3 @@
-import os
 import shutil
 import badass.core as core
 import badass.utils as utils
@@ -59,28 +58,6 @@ def getFileTexType():
     print result
 
 
-def pushfile(path, description):
-
-    if not os.path.isabs(path):
-        path = os.path.abspath(path)
-
-    if not os.path.exists(path):
-        print "hk-texture-publish: %s doesn't exists" % path
-        return 1
-
-    db = core.getDb()
-    doc_id = core.getIdFromPath(path)
-
-    if not (doc_id in db):
-        print "hk-push: %s isn't in the  database" % doc_id
-        return 1
-
-    if os.path.isdir(path):
-        core.pushDir(db, doc_id, path, description)
-    else:
-        core.pushFile(db, doc_id, path, description)
-
-
 def lsAllType():
     db = core.getDb()
     typ = "asset"
@@ -100,6 +77,7 @@ def createAssetOnDB(doc_id):
         doc_id=doc_id,
         description=description,
         debug=True)
+    return stat
 
 
 def createTaskOnDB(doc_id):
@@ -110,6 +88,7 @@ def createTaskOnDB(doc_id):
         doc_id=doc_id,
         description=description,
         debug=True)
+    return stat
 
 
 def createMassiveAssets():
