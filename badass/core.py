@@ -1156,7 +1156,7 @@ def push(doc_id=False, path=False, comment=False, vtype="review", **kwargs):
     def getAssetRepo(path, doc_id):
         if os.path.isdir(path):
             return doc_id
-        tmp, ext = os.path.splitext(path)               # Get file extension
+        ext = os.path.splitext(path)[-1]                # Get file extension
         name = doc_id+ext
         return name
 

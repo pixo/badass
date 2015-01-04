@@ -7,7 +7,6 @@ import imp
 import os
 import glob
 import yaml
-from functools import wraps
 from blessings import Terminal
 
 
@@ -44,24 +43,24 @@ class BadassCmd():
         self.__setHeader()
 
     def preCmds(self, **kwargs):
-        print "preCmds", kwargs
+        print "preCmds", kwargs, "\n"
         pass
 
     def pre(self, **kwargs):
         try:
             self.preCmds(**kwargs)
         except:
-            raise PluginError("Fail %s 'preCmd' Failed" % self.name)
+            raise PluginError("Fail %s 'preCmd' Failed\n" % self.name)
 
     def postCmds(self, **kwargs):
-        print "postCmds", kwargs
+        print "postCmds", kwargs, "\n"
         pass
 
     def post(self, **kwargs):
         try:
             self.postCmds(**kwargs)
         except:
-            raise PluginError("%s 'postCmds' Failed" % self.name)
+            raise PluginError("%s 'postCmds' Failed\n" % self.name)
 
     def dummy(self):
         pass
@@ -72,8 +71,6 @@ def loadPlugin(plugin):
 
 
 def getBdPluginsPath():
-    # bd_plugs = "/badass/users/pixo/plugins:"
-    # bd_plugs += "/badass/users/pixo/packages/int/badplugs/plugins"
     bd_plugs = os.getenv("BD_PLUGINS", False)
     if bd_plugs:
         bd_plugs = bd_plugs.split(":")
@@ -114,7 +111,7 @@ def getPlugins(callbackCmds):
     modules = dict()                # Initialize modules dict
     for py in pys:                  # Get modules corresponding to packages
         dirname = os.path.dirname(py)
-        pack, ext = os.path.splitext(py)
+        pack = os.path.splitext(py)[0]
         mname = pack.split(os.sep)[-1]
 
         if mname in callbackCmds:   # Check package name is in callback list
@@ -129,7 +126,7 @@ def runCmds(runCmd=False, **kwargs):
     callback = kwargs["callback"]
     callbackCmds = getCallbackCmds(callback)
     t = Terminal()
-    msg = "\nCallback %sCmd: " % runCmd
+    msg = "\n[Begin %sCmd] " % runCmd
     header = t.bold(t.yellow(msg))+t.bold(t.white(callback))
 
     if not callbackCmds:
@@ -139,7 +136,7 @@ def runCmds(runCmd=False, **kwargs):
 
     modules = getPlugins(callbackCmds)
     if not modules:
-        header += t.bold(t.red("\nCan't get Plpgins for this callback"))
+        header += t.bold(t.red("\nCan't get Plugins for this callback"))
         print header
         return False
 
@@ -159,7 +156,7 @@ def runCmds(runCmd=False, **kwargs):
 
             cmdLaunched.append(cmd)
 
-    print t.bold(t.blue("Done"))
+    print t.bold(t.yellow("[Finish %sCmd]\n" % runCmd))
 
 
 def runPreCmds(**kwargs):
