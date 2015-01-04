@@ -7,6 +7,7 @@ import commands
 import couchdb
 import utils
 import plugin
+from functools import wraps
 
 
 # DATABASE ####################################################################
@@ -22,6 +23,17 @@ class DatabaseError(Exception):
 
     def __str__(self):
         return repr(self.value)
+
+
+def callback(action):
+    # TODO: Documentation for callback()
+    @wraps(action)
+    def wrapper(**kwargs):
+        kwargs["callback"] = "%s.%s" % (__name__, action.func_name)
+        plugin.runPreCmds(**kwargs)
+        kwargs["stat"] = action(**kwargs)
+        plugin.runPostCmds(**kwargs)
+    return wrapper
 
 
 def getDesign():
@@ -1022,8 +1034,10 @@ def transfer(sources=list(), destination="", doc_id="", rename=True):
         utils.cp(fil, files[fil])
 
 
+@callback
 def pull(db=None, doc_id="", version="last", extension=False,
-         progressbar=False, msgbar=False, vtype="review"):
+         progressbar=False, msgbar=False, vtype="review", **kwargs):
+    # TODO: clean pull
     """
     This function copy the desired file from repository to local workspace.
 
@@ -1115,19 +1129,8 @@ def pull(db=None, doc_id="", version="last", extension=False,
     return pulled
 
 
-def pushCallback(action):
-    plugins = plugin.getPlugins("push")
-
-    def wrapper(**kwargs):
-        plugins.pre(**kwargs)
-        stat = action(**kwargs)
-        plugins.post(stat=stat, **kwargs)
-
-    return wrapper
-
-
-@pushCallback
-def push(doc_id=False, path=False, comment=False, vtype="review"):
+@callback
+def push(doc_id=False, path=False, comment=False, vtype="review", **kwargs):
     """
     This function copy the desired file from local workspace to repository.
 
@@ -1148,7 +1151,7 @@ def push(doc_id=False, path=False, comment=False, vtype="review"):
 
     if not all([path, doc_id, comment, vtype]):         # Check arguments
         print("pushfile(): wrong arguments.")
-        return
+        return False
 
     def getAssetRepo(path, doc_id):
         if os.path.isdir(path):

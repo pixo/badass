@@ -6,6 +6,8 @@ Created on Jan 3, 2015
 import imp
 import os
 import glob
+import yaml
+from functools import wraps
 from blessings import Terminal
 
 
@@ -14,27 +16,17 @@ class PluginError(Exception):
     Error raised by the Plugin pack.
     """
 
-    def __init__(self, value):
-        self.value = value
 
-    def __str__(self):
-        return repr(self.value)
-
-
-class PluginCmd():
+class BadassCmd():
     author = False
     version = False
     name = False
-    hook = False
+    info = False
 
     def __init__(self, **kwargs):
-        if not all([self.author, self.version, self.name, self.hook]):
+        if not all([self.author, self.version, self.name, self.info]):
             raise PluginError("'%s' Wrong initialization" % self.name)
-
-        if kwargs["hooked"] != self.hook:
-            self.desactive()
-        else:
-            self.active()
+        self.active()
 
     def desactive(self):
         self.pre = self.dummy
@@ -45,7 +37,7 @@ class PluginCmd():
         h = t.bold(t.yellow("Initializing: ")) + t.normal() + self.name + "\n"
         h += t.bold(t.yellow("Authored: ")) + t.normal() + self.author + "\n"
         h += t.bold(t.yellow("Version: ")) + t.normal() + self.version + "\n"
-        h += t.bold(t.yellow("Hooked: ")) + t.normal() + self.hook + "\n"
+        h += t.bold(t.yellow("Info: ")) + t.normal() + self.info
         print h
 
     def active(self):
@@ -75,40 +67,106 @@ class PluginCmd():
         pass
 
 
-def getPlugins():
-    bd_plugs = os.getenv("BD_PLUGINS_PATH")
-    if not bd_plugs:
-        return list()
-
-    bd_plugs = bd_plugs.split(":")
-    pys = list()
-
-    for path in bd_plugs:
-        pys += glob.glob(path+"/*.py")
-
-    modules = list()
-    for py in pys:
-        dirname = os.path.dirname(py)
-        pack, ext = os.path.splitext(py)
-        mname = pack.split(os.sep)[-1]
-        module = imp.find_module(mname, [dirname])
-        modules.append([mname, module])
-    return modules
-
-
 def loadPlugin(plugin):
     return imp.load_module(plugin[0], *plugin[1])
 
 
-def runPreCmds(hooked, plugins):
-    for plugin in plugins:
-        module = loadPlugin(plugin)
-        module = module.initialize(hooked=hooked)
-        module.pre()
+def getBdPluginsPath():
+    # bd_plugs = "/badass/users/pixo/plugins:"
+    # bd_plugs += "/badass/users/pixo/packages/int/badplugs/plugins"
+    bd_plugs = os.getenv("BD_PLUGINS", False)
+    if bd_plugs:
+        bd_plugs = bd_plugs.split(":")
+    return bd_plugs
 
 
-def runPostCmds(hooked, plugins):
-    for plugin in plugins:
-        module = loadPlugin(plugin)
-        module = module.initialize(hooked=hooked)
-        module.pre()
+def getCallbackCmds(callback):
+    bd_plugs = getBdPluginsPath()
+    doc = False
+
+    if bd_plugs:
+        cbyamls = list()
+        for path in bd_plugs:
+            cbyamls += glob.glob(path+"/callbacks.yaml")
+
+        callbackDep = cbyamls[-1]
+        if os.path.exists(callbackDep):
+            with open(callbackDep, 'r') as f:
+                doc = yaml.load(f)
+    if doc:
+        if callback in doc:
+            doc = doc[callback]
+
+    return doc
+
+
+def getPlugins(callbackCmds):
+    # TODO: Documentation for getPlugins()
+    '''
+    '''
+    bd_plugs = getBdPluginsPath()   # Get badass plugins paths
+    if not bd_plugs:                # Check badass plugins path is not empty
+        return False
+    pys = list()                    # Initialize packages list
+    for path in bd_plugs:           # Get all packages in BD plugins path
+        pys += glob.glob(path+"/*.py")
+
+    modules = dict()                # Initialize modules dict
+    for py in pys:                  # Get modules corresponding to packages
+        dirname = os.path.dirname(py)
+        pack, ext = os.path.splitext(py)
+        mname = pack.split(os.sep)[-1]
+
+        if mname in callbackCmds:   # Check package name is in callback list
+            module = imp.find_module(mname, [dirname])
+            modules[mname] = module
+
+    return False if modules == {} else modules
+
+
+def runCmds(runCmd=False, **kwargs):
+    # TODO: Documentation for runCmds()
+    callback = kwargs["callback"]
+    callbackCmds = getCallbackCmds(callback)
+    t = Terminal()
+    msg = "\nCallback %sCmd: " % runCmd
+    header = t.bold(t.yellow(msg))+t.bold(t.white(callback))
+
+    if not callbackCmds:
+        header += t.bold(t.red("\nCan't get callbackCmds"))
+        print header
+        return False
+
+    modules = getPlugins(callbackCmds)
+    if not modules:
+        header += t.bold(t.red("\nCan't get Plpgins for this callback"))
+        print header
+        return False
+
+    cmdLaunched = list()
+
+    print header
+
+    for cmd in callbackCmds:
+        if cmd not in cmdLaunched:
+            module = loadPlugin((cmd, modules[cmd]))
+            module = module.create()
+
+            if runCmd == "pre":
+                module.pre(**kwargs)
+            elif runCmd == "post":
+                module.post(**kwargs)
+
+            cmdLaunched.append(cmd)
+
+    print t.bold(t.blue("Done"))
+
+
+def runPreCmds(**kwargs):
+    # TODO: Documentation for runCmdsPre()
+    runCmds(runCmd="pre", **kwargs)
+
+
+def runPostCmds(**kwargs):
+    # TODO: Documentation for runCmdsPost()
+    runCmds(runCmd="post", **kwargs)
