@@ -30,7 +30,7 @@ def callback(action):
     @wraps(action)
     def wrapper(**kwargs):
         kwargs["callback"] = "%s.%s" % (__name__, action.func_name)
-        plugin.runPreCmds(**kwargs)
+        kwargs["stat"] = plugin.runPreCmds(**kwargs)
         kwargs["stat"] = action(**kwargs)
         plugin.runPostCmds(**kwargs)
     return wrapper
@@ -1065,7 +1065,7 @@ def pull(db=None, doc_id="", version="last", extension=False,
     >>> .../chr/foo/mod/a/bls_chr_foo_mod_a.v002.base/bls_chr_foo_mod_a.mb']
     """
     # Make sure vtype exists
-    if not (vtype in utils.getVersionType()):
+    if not (kwargs["stat"] and vtype in utils.getVersionType()):
         return False
 
     def echoMsg(msg="", msgbar=None):
@@ -1157,8 +1157,7 @@ def push(doc_id=False, path=False, comment=False, vtype="review", **kwargs):
         if os.path.isdir(path):
             return doc_id
         ext = os.path.splitext(path)[-1]                # Get file extension
-        name = doc_id+ext
-        return name
+        return doc_id + ext
 
     db = getDb()                                        # Get DB
     doc = db[doc_id]                                    # Get asset document
@@ -1168,28 +1167,19 @@ def push(doc_id=False, path=False, comment=False, vtype="review", **kwargs):
 
     repo = getPathFromId(doc_id, vtype=vtype)           # Get asset repo
     name = getAssetRepo(path, doc_id)                   # Get name
-
-    tmp_dname = ver_num+'_'+utils.hashTime()            # Get tmpdir name
-    source_dir = os.path.join(repo, tmp_dname)          # Get source dir
-    source = os.path.join(source_dir, name)             # Get source path
-    target_dir = os.path.join(repo, ver_num)            # Get target dir
-    target = os.path.join(target_dir, name)             # Get target path
+    target = os.path.join(repo, ver_num, name)          # Get target path
 
     # Create the version data for "versions" document's attribute
     fileinfo = dict()
     fileinfo["creator"] = utils.getUser()
     fileinfo["created"] = time.time()
     fileinfo["comment"] = comment
-    fileinfo["path"] = target
     fileinfo["release"] = list()
+    fileinfo["path"] = target
     ver_attr[ver] = fileinfo
     doc[vtype] = ver_attr
     db[doc_id] = doc
 
-    utils.cp(path, source)          # Copying local file to temporary
-    utils.mv(source, target)        # Move temporary file to destination
-    utils.rm(source_dir)            # Remove temporary file
-    print target
     return target                   # Return published file/dir full path
 
 
