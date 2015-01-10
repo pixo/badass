@@ -10,29 +10,20 @@ import plugin
 from functools import wraps
 
 
-# DATABASE ####################################################################
 class DatabaseError(Exception):
-
     """
     Error raised by the project module.
-
     """
 
-    def __init__(self, value):
-        self.value = value
 
-    def __str__(self):
-        return repr(self.value)
-
-
-def callback(action):
+def callback(func):
     # TODO: Documentation for callback()
-    @wraps(action)
+    @wraps(func)
     def wrapper(**kwargs):
-        kwargs["callback"] = "%s.%s" % (__name__, action.func_name)
-        kwargs["stat"] = plugin.runPreCmds(**kwargs)
-        kwargs["stat"] = action(**kwargs)
-        plugin.runPostCmds(**kwargs)
+        kwargs["cmd"] = "%s" % func.func_name
+        kwargs["callback"] = "%s.%s" % (__name__, func.func_name)
+        stat = func(**kwargs)
+        plugin.executeCmds(stat, kwargs)
     return wrapper
 
 
@@ -41,7 +32,7 @@ def getDesign():
 
 
 def getServer(serveradress=""):
-
+    # TODO: Documentation getServer()
     if serveradress == "":
         serveradress = utils.getDbAdress()
 
@@ -54,7 +45,7 @@ def getServer(serveradress=""):
 
 
 def serverExists(serveradress=""):
-
+    # TODO: Documentation serverExists()
     if serveradress.find("http://") < 0:
         serveradress = "http://%s" % serveradress
 
@@ -63,7 +54,6 @@ def serverExists(serveradress=""):
     try:
         stats = server.stats()
         return stats
-
     except:
         return False
 
@@ -89,7 +79,7 @@ def getDb(dbname="", serveradress=""):
 
 
 def lsDb(db=None, view="", startkey="", endkey=""):
-
+    # TODO: Documentation lsDb()
     if db is None:
         db = getDb()
 
@@ -107,7 +97,7 @@ def lsDb(db=None, view="", startkey="", endkey=""):
 
 
 def getDefaultViews():
-    # TODO: add documentation to the function
+    # TODO: Documentation for getDefaultViews()
     asset = utils.getAssetTypes()
     task = utils.getAssetTasks()
 
@@ -180,17 +170,9 @@ def createDb(name=None, serveradress=None):
 
 # ASSET #######################################################################
 class AssetError(Exception):
-
     """
     Error raised by the Asset module.
-
     """
-
-    def __init__(self, value):
-        self.value = value
-
-    def __str__(self):
-        return repr(self.value)
 
 
 def createAsset(
@@ -265,8 +247,7 @@ def createAsset(
     return db[_id]
 
 
-def createTask(
-        db=None, doc_id="", comment="", overdoc=dict(), debug=False):
+def createTask(db=None, doc_id="", comment="", overdoc=dict(), debug=False):
     """
     This function create a **task** into the provided database.
 
@@ -374,8 +355,7 @@ def createPack(db=None, doc_id="", comment="No comment"):
     return result
 
 
-def createShot(db=None, doc_id="", comment="No comment",
-               cut_in=1, cut_out=100):
+def createShot(db=None, doc_id="", comment="No comment", cutin=1, cutout=100):
     """
     This function create an asset of type **Shot** into the provided database.
 
@@ -402,8 +382,8 @@ def createShot(db=None, doc_id="", comment="No comment",
 
     # Extra shot attributes
     overdoc = {"seq": doc_id.split("_")[2].split("-")[0],
-               "cut_in": cut_in,
-               "cut_out": cut_out}
+               "cut_in": cutin,
+               "cut_out": cutout}
 
     # Create asset shot with shot extra attributes
     result = createAsset(db, doc_id, comment, overdoc)
@@ -411,32 +391,25 @@ def createShot(db=None, doc_id="", comment="No comment",
     return result
 
 
-def setAssetAttr(db=None, docId="", attr=None, value=None):
-    if docId == "" or not attr:
+def setAssetAttr(db=None, doc_id="", attr=None, value=None):
+    # TODO: Documentation for setAssetAttr()
+    if doc_id == "" or not attr:
         print ("setAssetAttr(): please provide proper attributes.")
         return
 
     if not db:
         db = getDb()
 
-    doc = db[docId]
+    doc = db[doc_id]
     doc[attr] = value
     _id, _rev = db.save(doc)
 
 
 # PROJECT #####################################################################
 class ProjectError (Exception):
-
     """
     Error raised by the project module.
-
     """
-
-    def __init__(self, value):
-        self.value = value
-
-    def __str__(self):
-        return repr(self.value)
 
 
 def isProject(db=None):
@@ -664,16 +637,9 @@ def createProject(name="", comment="Default", db_server="", sync_root="",
 
 # Repository ##################################################################
 class RepositoryError (Exception):
-
     """
     Error raised by the repository module.
     """
-
-    def __init__(self, value):
-        self.value = value
-
-    def __str__(self):
-        return repr(self.value)
 
 
 def getIdFromFile(path=""):
@@ -690,7 +656,6 @@ def getIdFromFile(path=""):
     >>> 'prod_chr_mickey_mod_a'
     """
 
-    # Check if the path exists):
     if not os.path.exists(path):
         raise RepositoryError("getIdFromFile():Can't get 'doc_id' from '%s'." %
                               path)
@@ -715,15 +680,11 @@ def getIdFromPath(path=""):
     >>> 'prod_ch_mimi_mod_a'
     """
 
-    # Check if the path exists
-    if not os.path.exists(path):
+    if not os.path.exists(path):  # Check if the path exists
         raise RepositoryError("getIdFromFile(): path doesn't exists")
 
-    # Expand contained variables
-    path = os.path.expandvars(path)
-
-    # Get user repository
-    user_repo = utils.getUserRepo() + os.sep
+    path = os.path.expandvars(path)  # Expand contained variables
+    user_repo = utils.getUserRepo() + os.sep  # Get user repository
 
     # Get the doc_id
     path = path.replace(user_repo, "")
@@ -754,28 +715,22 @@ def getPathFromId(doc_id="", local=False, vtype="review"):
     >>> #Local
     >>> getPathFromId ( doc_id = "prod_chr_mickey_mod_a", local = True )
     >>> '/homeworks/users/jdoe/projects/prod/chr/mickey/mod/a'
-
     """
+
     if not (vtype in utils.getVersionType()):
         return False
 
-    # Get the last part of the path
-    path = doc_id.replace("_", os.sep)
+    path = doc_id.replace("_", os.sep)  # Get the last part of the path
 
-    # Get the first part of the path
-    if local:
-        # If true return the local project root
-        root = utils.getUserRepo()
+    if local:  # Get the first part of the path
+        root = utils.getUserRepo()  # If true return the local project root
     else:
-        # If false return the repository project root
-        root = utils.getRepo()
+        root = utils.getRepo()  # If false return the repository project root
 
-    # Check the root path value
-    if (not root) or root == "":
+    if (not root) or root == "":  # Check the root path value
         raise RepositoryError("getPathFromId(): incorrect value for root path")
 
-    # Full path
-    path = os.path.join(root, path)
+    path = os.path.join(root, path)  # Full path
     if not local:
         path = os.path.join(path, vtype)
 
@@ -814,12 +769,10 @@ def getVersions(db=None, doc_id="", vtype="review"):
     if not (vtype in utils.getVersionType()):
         return False
 
-    # If db is not provided get the current project DB
-    if db is None:
+    if db is None:  # If db is not provided get the current project DB
         db = getDb()
 
-    # Get Versions from document
-    versions = db[doc_id][vtype]
+    versions = db[doc_id][vtype]  # Get Versions from document
 
     return versions
 
@@ -848,21 +801,16 @@ def getVersionPath(doc_id="", version="last", db=None, vtype="review"):
     if not (vtype in utils.getVersionType()):
         return False
 
-    # Get asset versions
-    versions = getVersions(db=db, doc_id=doc_id, vtype=vtype)
+    versions = getVersions(db=db, doc_id=doc_id, vtype=vtype)  # Get versions
     num = None
 
-    # If the queried version is the latest
-    if version == "last":
+    if version == "last":  # If the queried version is the latest
         num = int(len(versions))
     else:
         num = int(version)
 
-    # Get version num attr
-    version = versions[str(num)]
-
-    # Get the version path
-    path = version["path"]
+    version = versions[str(num)]  # Get version num attr
+    path = version["path"]  # Get the version path
 
     return path
 
@@ -884,8 +832,8 @@ def getLocalVersionPath(doc_id="", version=1, vtype="review"):
     >>> getLocalVersionPath(doc_id="prod_chr_mickey_mod_a", version = 2)
     >>> '../jdoe/projects/prod/chr/mimi/mod/a/prod_chr_mimi_mod_a.v002.base'
     """
-    # Make sure vtype exists
-    if not (vtype in utils.getVersionType()):
+
+    if not (vtype in utils.getVersionType()):  # Make sure vtype exists
         return False
 
     # Make sure to get the right type for concatenation
@@ -939,8 +887,8 @@ def getTaskFromId(doc_id=None):
     """
 
     if not (doc_id):
-        raise RepositoryError(
-            "getTaskFromId(): can't get type from wrong 'doc_id'")
+        msg = "getTaskFromId(): can't get type from wrong 'doc_id'"
+        raise RepositoryError(msg)
 
     return doc_id.split("_")[3]
 
@@ -959,26 +907,22 @@ def createWorkspace(doc_id="", vtype="review"):
     >>> createWorkspace ( doc_id = "prod_chr_mickey_mod_a" )
     >>> '/homeworks/users/jdoe/projects/prod/chr/mickey/mod/a'
     """
-    # Make sure vtype exists
-    if not (vtype in utils.getVersionType()):
+
+    if not (vtype in utils.getVersionType()):  # Make sure vtype exists
         return False
 
     # Get the local asset path to create from asset id
     path = getPathFromId(doc_id=doc_id, local=True, vtype=vtype)
 
-    # Check if the path exist
-    if os.path.exists(path):
+    if os.path.exists(path):  # Check if the path exist
         print ("createWorkspace(): %s already exist" % path)
         return False
 
-    # Create the asset path with the proper permission
-    os.makedirs(path, 0o775)
+    os.makedirs(path, 0o775)  # Create the asset path with permission
 
-    # Check if the path was created
-    if not os.path.exists(path):
-        raise RepositoryError(
-            "createWorkspace(): cannot create directory %s" %
-            path)
+    if not os.path.exists(path):  # Check if the path was created
+        msg = "createWorkspace(): cannot create directory %s" % path
+        raise RepositoryError(msg)
 
     print ("createWorkspace(): %s created" % path)
     return path
@@ -1149,7 +1093,7 @@ def push(doc_id=False, path=False, comment=False, vtype="review", **kwargs):
     >>> push(doc_id="bls_chr_mimi_mod_a", path=path, comment="my comments")
     """
 
-    if not all([path, doc_id, comment, vtype]):         # Check arguments
+    if not all([path, doc_id, comment, vtype]):        # Check arguments
         print("pushfile(): wrong arguments.")
         return False
 
@@ -1159,15 +1103,15 @@ def push(doc_id=False, path=False, comment=False, vtype="review", **kwargs):
         ext = os.path.splitext(path)[-1]                # Get file extension
         return doc_id + ext
 
+    stat = dict()
     db = getDb()                                        # Get DB
     doc = db[doc_id]                                    # Get asset document
     ver_attr = getVersions(db, doc_id, vtype=vtype)     # Get versions document
-    ver = len(ver_attr) + 1                             # Get last version num
-    ver_num = "%04d" % ver                              # Convert to string
-
+    stat["version"] = len(ver_attr) + 1
     repo = getPathFromId(doc_id, vtype=vtype)           # Get asset repo
     name = getAssetRepo(path, doc_id)                   # Get name
-    target = os.path.join(repo, ver_num, name)          # Get target path
+    ver = "%04d" % stat["version"]                      # Get last version num
+    stat['target'] = os.path.join(repo, ver, name)      # Target
 
     # Create the version data for "versions" document's attribute
     fileinfo = dict()
@@ -1175,23 +1119,24 @@ def push(doc_id=False, path=False, comment=False, vtype="review", **kwargs):
     fileinfo["created"] = time.time()
     fileinfo["comment"] = comment
     fileinfo["release"] = list()
-    fileinfo["path"] = target
-    ver_attr[ver] = fileinfo
+    fileinfo["path"] = stat['target']
+    fileinfo["stat"] = False
+    ver_attr[stat["version"]] = fileinfo
+    stat["pubinfo"] = fileinfo
     doc[vtype] = ver_attr
     db[doc_id] = doc
+    return stat  # Return the path to publish data
 
-    return target                   # Return published file/dir full path
 
-
-def release(db=None, docId=False, version=False):
-    ""
+@callback
+def release(db=None, doc_id=False, version=False, **kwargs):
     # TODO: Documentation for badass.core.release
     # Check if DB is provided else get the project DB
     if (not db) or db == "":
         db = getDb()
 
-    # Get task document
-    doc = db[docId]
+    doc = db[doc_id]  # Get document
+    stat = dict()
 
     review = doc["review"]
     version = str(int(version))
@@ -1204,11 +1149,12 @@ def release(db=None, docId=False, version=False):
     releaseVersion = dict()
     releaseVersion["comment"] = reviewVersion["comment"]
     releaseVersion["review"] = version
-    releaseVersion["path"] = getPathFromId(doc_id=docId, vtype="release")
+    releaseVersion["path"] = getPathFromId(doc_id=doc_id, vtype="release")
     releaseVersion["path"] = os.path.join(releaseVersion["path"], "%04d" %
                                           int(last))
     releaseVersion["created"] = time.time()
     releaseVersion["creator"] = utils.getUser()
+    releaseVersion["stat"] = False
     release[last] = releaseVersion
     doc["release"] = release
 
@@ -1220,25 +1166,22 @@ def release(db=None, docId=False, version=False):
 
     src = reviewVersion["path"]
     dst = releaseVersion["path"]
-    utils.cp(src, dst)
     _id, _rev = db.save(doc)
+
+    stat["version"] = last
+    stat["source"] = src
+    stat["target"] = dst
+    return stat
 
 # Texture #####################################################################
 # TODO move texture stuff in badtools or in a badplugs (plugins)
 
 
-class TextureError (Exception):
+class TextureError(Exception):
 
     """
     Error raised by the texture module.
-
     """
-
-    def __init__(self, value):
-        self.value = value
-
-    def __str__(self):
-        return repr(self.value)
 
 
 def getTextureAttr(path=None):

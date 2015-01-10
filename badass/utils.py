@@ -17,8 +17,6 @@ def getPemToolsPath():
 
 def chown(path):
     # TODO: Documentation for cp()
-    """
-    """
     if path:
         tools = getPemToolsPath()
         tools = os.path.join(tools, "bd-chown")
@@ -29,8 +27,6 @@ def chown(path):
 
 def chgrp(path):
     # TODO: Documentation for cp()
-    """
-    """
     if path:
         tools = getPemToolsPath()
         tools = os.path.join(tools, "bd-chgrp")
@@ -41,8 +37,6 @@ def chgrp(path):
 
 def chmod(path, mode="755"):
     # TODO: Documentation for rm()
-    """
-    """
     if path:
         tools = getPemToolsPath()
         tools = os.path.join(tools, "bd-chmod")
@@ -53,8 +47,6 @@ def chmod(path, mode="755"):
 
 def mkdir(path=False, mode="755"):
     # TODO: Documentation for mkdirs()
-    """
-    """
     if path:
         tools = getPemToolsPath()
         tools = os.path.join(tools, "bd-mkdir")
@@ -65,8 +57,6 @@ def mkdir(path=False, mode="755"):
 
 def rm(path):
     # TODO: Documentation for rm()
-    """
-    """
     if path:
         tools = getPemToolsPath()
         tools = os.path.join(tools, "bd-rm")
@@ -75,17 +65,18 @@ def rm(path):
         return False
 
 
-def cp(source, destination):
+def cp(source=False, destination=False, hardlink=False):
     # TODO: Documentation for cp()
-    """
-    """
     if source and destination:
         tools = getPemToolsPath()
         tools = os.path.join(tools, "bd-cp")
         dst_dir = os.path.dirname(destination)
+        arg = "-rl" if hardlink else "-r"
+
         if not os.path.exists(dst_dir):
             mkdir(dst_dir)
-        stat = subprocess.check_output([tools, "-r", source, destination])
+
+        stat = subprocess.check_output([tools, arg, source, destination])
         chmod(destination)
         return stat
     else:
@@ -94,8 +85,6 @@ def cp(source, destination):
 
 def mv(source, destination):
     # TODO: Documentation for cp()
-    """
-    """
     if source and destination:
         tools = getPemToolsPath()
         tools = os.path.join(tools, "bd-mv")
@@ -108,8 +97,7 @@ def mv(source, destination):
 
 
 def ln(source, destination):
-    """
-    """
+    # TODO: Documentation for ln
     if source and destination:
         tools = getPemToolsPath()
         tools = os.path.join(tools, "bd-ln")
@@ -119,6 +107,18 @@ def ln(source, destination):
         return subprocess.check_output([tools, source, destination])
     else:
         return False
+
+
+def getDocIdInfos(doc_id):
+    # TODO: Documentation for getDocIdInfos
+    infos = dict()
+    tmp = doc_id.split("_")
+    infos["project"] = tmp[0]
+    infos["type"] = tmp[1]
+    infos["name"] = tmp[2]
+    infos["task"] = tmp[3]
+    infos["fork"] = tmp[4]
+    return infos
 
 
 def createFile(path="", content="", overwrite=False):

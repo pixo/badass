@@ -25,39 +25,26 @@ class BadassCmd():
     def __init__(self, **kwargs):
         if not all([self.author, self.version, self.name, self.info]):
             raise PluginError("'%s' Wrong initialization" % self.name)
-        self.initCmd(**kwargs)
+        stat = self.initialize(**kwargs)
+        if stat:
+            self.__setHeader()
 
     def __setHeader(self):
         t = Terminal()
-        h = t.bold(t.yellow("\nInitializing: ")) + t.normal(self.name + "\n")
+        h = t.bold(t.yellow("Initializing: ")) + t.normal(self.name + "\n")
         h += t.bold(t.yellow("Author: ")) + t.normal(self.author + "\n")
         h += t.bold(t.yellow("Version: ")) + t.normal(self.version + "\n")
         h += t.bold(t.yellow("Info: ")) + t.normal(self.info)
         print h
 
-    def initCmd(self, **kwargs):
-        self.__setHeader()
-        return self.init(**kwargs)
-
-    def init(self, **kwargs):
-        print "initCmd", kwargs, "\n"
+    def dummy(self):
         return True
 
-    def preCmd(self, **kwargs):
-        self.__setHeader()
-        return self.pre(**kwargs)
+    def initialize(self, **kwargs):
+        return kwargs
 
-    def pre(self, **kwargs):
-        print "pre", kwargs, "\n"
-        return True
-
-    def postCmd(self, **kwargs):
-        self.__setHeader()
-        return self.post(**kwargs)
-
-    def post(self, **kwargs):
-        print "post", kwargs, "\n"
-        return True
+    def execute(self, **kwargs):
+        return kwargs
 
 
 def loadPlugin(plugin):
@@ -66,6 +53,9 @@ def loadPlugin(plugin):
 
 def getPluginsPath():
     bd_plugs = os.getenv("BD_PLUGINS", False)
+    bd_plugs = os.getenv("BD_PLUGINS_DEBUG", bd_plugs)
+    bd_plugs = "/badass/users/pixo/packages/int/badplugs/plugins"
+
     if bd_plugs:
         bd_plugs = bd_plugs.split(":")
     return bd_plugs
@@ -93,7 +83,6 @@ def getCallbackCmds(callback):
 
 def getPlugins(callbackCmds):
     # TODO: Documentation for getPlugins()
-    """ """
 
     bd_plugs = getPluginsPath()   # Get badass plugins paths
     if not bd_plugs:                # Check badass plugins path is not empty
@@ -115,24 +104,23 @@ def getPlugins(callbackCmds):
     return False if modules == {} else modules
 
 
-def runCmds(**kwargs):
-    # TODO: Documentation for runCmds()
-    runCmd = kwargs['cmd']
+def executeCmds(stat, kwargs):
+    # TODO: Documentation for executeCmds()
+    t = Terminal()
+    exeCmd = kwargs['cmd']
+    kwargs.update(stat)
+    callback = kwargs["callback"]
+    msg = "\n[Begin %s] " % exeCmd  # exeCmd
+    header = t.bold(t.yellow(msg))+t.bold(t.white(callback))
+
     callback = kwargs["callback"]
     callbackCmds = getCallbackCmds(callback)
-    t = Terminal()
-
-    msg = "\n[Begin %sCmd] " % runCmd
-    header = t.bold(t.yellow(msg))+t.bold(t.white(callback))
+    modules = getPlugins(callbackCmds)
     if not callbackCmds:
         header += t.bold(t.red("\nCan't get callbackCmds"))
         print header
         return False
 
-    if 'stat' not in kwargs:
-        kwargs['stat'] = True
-
-    modules = getPlugins(callbackCmds)
     if not modules:
         header += t.bold(t.red("\nCan't get Plugins for this callback"))
         print header
@@ -147,23 +135,8 @@ def runCmds(**kwargs):
         elif cmd not in cmdLaunched:
             module = loadPlugin((cmd, modules[cmd]))
             module = module.create(**kwargs)
-            if runCmd == "pre":
-                lastCmdStat = module.preCmd(**kwargs)
-            elif runCmd == "post":
-                lastCmdStat = module.postCmd(**kwargs)
+            lastCmdStat = module.execute(**kwargs)
             cmdLaunched.append(cmd)
 
-    print t.bold(t.yellow("[Finish %sCmd]\n" % runCmd))
+    print t.bold(t.yellow("[Finish %s]\n" % exeCmd))
     return lastCmdStat
-
-
-def runPreCmds(**kwargs):
-    # TODO: Documentation for runCmdsPre()
-    kwargs["cmd"] = "pre"
-    runCmds(**kwargs)
-
-
-def runPostCmds(**kwargs):
-    # TODO: Documentation for runCmdsPost()
-    kwargs["cmd"] = "post"
-    runCmds(**kwargs)
