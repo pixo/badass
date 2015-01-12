@@ -31,10 +31,11 @@ class BadassCmd():
 
     def __setHeader(self):
         t = Terminal()
-        h = t.bold(t.yellow("\nInitializing: ")) + t.normal(self.name + "\n")
-        h += t.bold(t.yellow("Author: ")) + t.normal(self.author + "\n")
-        h += t.bold(t.yellow("Version: ")) + t.normal(self.version + "\n")
-        h += t.bold(t.yellow("Info: ")) + t.normal(self.info)
+        h = "\n"
+        h += t.bold_yellow("Initializing: ") + t.bold_white(self.name + "\n")
+        h += t.bold_yellow("Author: ") + t.bold_white(self.author + "\n")
+        h += t.bold_yellow("Version: ") + t.bold_white(self.version + "\n")
+        h += t.bold_yellow("Info: ") + t.bold_white(self.info)
         print h
 
     def dummy(self, **kwargs):
