@@ -31,13 +31,13 @@ class BadassCmd():
 
     def __setHeader(self):
         t = Terminal()
-        h = t.bold(t.yellow("Initializing: ")) + t.normal(self.name + "\n")
+        h = t.bold(t.yellow("\nInitializing: ")) + t.normal(self.name + "\n")
         h += t.bold(t.yellow("Author: ")) + t.normal(self.author + "\n")
         h += t.bold(t.yellow("Version: ")) + t.normal(self.version + "\n")
         h += t.bold(t.yellow("Info: ")) + t.normal(self.info)
         print h
 
-    def dummy(self):
+    def dummy(self, **kwargs):
         return True
 
     def initialize(self, **kwargs):
@@ -54,7 +54,7 @@ def loadPlugin(plugin):
 def getPluginsPath():
     bd_plugs = os.getenv("BD_PLUGINS", False)
     bd_plugs = os.getenv("BD_PLUGINS_DEBUG", bd_plugs)
-    bd_plugs = "/badass/users/pixo/packages/int/badplugs/plugins"
+#     bd_plugs = "/badass/users/pixo/packages/int/badplugs/plugins"
 
     if bd_plugs:
         bd_plugs = bd_plugs.split(":")
@@ -104,7 +104,7 @@ def getPlugins(callbackCmds):
     return False if modules == {} else modules
 
 
-def executeCmds(stat, kwargs):
+def executeCmds(stat, **kwargs):
     # TODO: Documentation for executeCmds()
     t = Terminal()
     exeCmd = kwargs['cmd']
@@ -116,6 +116,7 @@ def executeCmds(stat, kwargs):
     callback = kwargs["callback"]
     callbackCmds = getCallbackCmds(callback)
     modules = getPlugins(callbackCmds)
+
     if not callbackCmds:
         header += t.bold(t.red("\nCan't get callbackCmds"))
         print header

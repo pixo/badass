@@ -23,7 +23,7 @@ def callback(func):
         kwargs["cmd"] = "%s" % func.func_name
         kwargs["callback"] = "%s.%s" % (__name__, func.func_name)
         stat = func(**kwargs)
-        plugin.executeCmds(stat, kwargs)
+        plugin.executeCmds(stat, **kwargs)
     return wrapper
 
 

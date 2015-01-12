@@ -89,9 +89,14 @@ def mv(source, destination):
         tools = getPemToolsPath()
         tools = os.path.join(tools, "bd-mv")
         dst_dir = os.path.dirname(destination)
+
         if not os.path.exists(dst_dir):
             mkdir(dst_dir)
-        return subprocess.check_output([tools, source, destination])
+
+        stat = subprocess.check_output([tools, source, destination])
+        chown(destination)
+        chgrp(destination)
+        return stat
     else:
         return False
 
