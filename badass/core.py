@@ -1174,7 +1174,7 @@ def release(db=None, doc_id=False, version=False, **kwargs):
     return stat
 
 # Texture #####################################################################
-# TODO move texture stuff in badtools or in a badplugs (plugins)
+# TODO move texture stuff in badtools or in a baddag (plugins)
 
 
 class TextureError(Exception):

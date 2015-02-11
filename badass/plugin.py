@@ -55,7 +55,7 @@ def loadPlugin(plugin):
 def getPluginsPath():
     bd_plugs = os.getenv("BD_PLUGINS", False)
     bd_plugs = os.getenv("BD_PLUGINS_DEBUG", bd_plugs)
-#     bd_plugs = "/badass/users/pixo/packages/int/badplugs/plugins"
+#     bd_plugs = "/badass/users/pixo/packages/int/baddag/plugins"
 
     if bd_plugs:
         bd_plugs = bd_plugs.split(":")
